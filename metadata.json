@@ -1,0 +1,6 @@
+{
+  "name": "CivicGuardian",
+  "description": "Community Hazard Reporting and Public Safety Management System for Dhaka, with Gemini-assisted image assessment and human verification.",
+  "requestFramePermissions": ["geolocation"],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

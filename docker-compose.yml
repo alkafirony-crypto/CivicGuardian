@@ -1,0 +1,23 @@
+services:
+  db:
+    image: postgis/postgis:16-3.4-alpine
+    environment:
+      POSTGRES_DB: civicguardian
+      POSTGRES_USER: civicguardian
+      POSTGRES_PASSWORD: civicguardian-local
+    ports: ["5432:5432"]
+    volumes: ["civicguardian_pg:/var/lib/postgresql/data"]
+  app:
+    build: .
+    depends_on: [db]
+    ports: ["3000:3000"]
+    environment:
+      DATABASE_URL: postgresql://civicguardian:civicguardian-local@db:5432/civicguardian
+      COOKIE_SECRET: local-only-change-this-secret-123456789
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID}
+      VITE_GOOGLE_CLIENT_ID: ${VITE_GOOGLE_CLIENT_ID}
+      ADMIN_EMAILS: ${ADMIN_EMAILS}
+      GEMINI_API_KEY: ${GEMINI_API_KEY}
+      GEMINI_MODEL: ${GEMINI_MODEL:-gemini-2.5-flash}
+volumes:
+  civicguardian_pg:
