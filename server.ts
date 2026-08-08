@@ -37,7 +37,7 @@ app.set("trust proxy",1);
 // Browser security headers belong on the production surface, where the app is
 // serving its built assets instead of Vite's development runtime.
 if(isProduction){
-  app.use(helmet({contentSecurityPolicy:{directives:{defaultSrc:["'self'"],scriptSrc:["'self'","https://accounts.google.com"],styleSrc:["'self'","'unsafe-inline'","https://accounts.google.com"],imgSrc:["'self'","data:","blob:","https://*.googleusercontent.com","https://*.tile.openstreetmap.org","https://*.basemaps.cartocdn.com"],connectSrc:["'self'","https://accounts.google.com","https://*.googleapis.com"],frameSrc:["https://accounts.google.com"],objectSrc:["'none'"],baseUri:["'self'"],frameAncestors:["'none'"]}},crossOriginResourcePolicy:{policy:"cross-origin"}}));
+  app.use(helmet({contentSecurityPolicy:{directives:{defaultSrc:["'self'"],scriptSrc:["'self'","https://accounts.google.com"],styleSrc:["'self'","'unsafe-inline'","https://accounts.google.com"],imgSrc:["'self'","data:","blob:","https://*.googleusercontent.com","https://*.tile.openstreetmap.org","https://*.basemaps.cartocdn.com"],connectSrc:["'self'","https://accounts.google.com","https://*.googleapis.com"],frameSrc:["https://accounts.google.com"],objectSrc:["'none'"],baseUri:["'self'"],frameAncestors:["'none'"]}},crossOriginOpenerPolicy:{policy:"same-origin-allow-popups"},crossOriginResourcePolicy:{policy:"cross-origin"}}));
 }
 app.use(express.json({limit:"12mb"})); app.use(attachUser);
 const limiter=rateLimit({windowMs:60_000,limit:120,standardHeaders:"draft-7",legacyHeaders:false}); app.use("/api",limiter);
