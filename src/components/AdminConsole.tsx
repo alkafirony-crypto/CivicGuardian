@@ -67,8 +67,8 @@ export default function AdminConsole({ issues, metrics, onSelect, onStatus }: {
   ] as const;
 
   return (
-    <main className="cg-dark-page min-h-[calc(100vh-56px)]">
-      <div className="mx-auto max-w-6xl px-4 py-6 sm:px-5 lg:py-8">
+    <main className="cg-dark-page min-h-[calc(100vh-72px)]">
+      <div className="mx-auto max-w-7xl px-4 py-6 sm:px-5 lg:py-8">
         <div className="flex flex-col justify-between gap-4 md:flex-row md:items-end">
           <div>
             <div className="flex items-center gap-2 text-xs font-black uppercase tracking-[.18em] text-sky-300">
@@ -87,23 +87,23 @@ export default function AdminConsole({ issues, metrics, onSelect, onStatus }: {
         <div className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
           {statCards.map(([title, value, Icon]) => (
             <div key={title} className="cg-dark-card">
-              <Icon className="h-5 w-5 text-sky-300" />
-              <div className="mt-2 text-xl font-black text-white">{value}</div>
-              <div className="mt-0.5 text-[10px] font-bold uppercase tracking-wider text-slate-500">{title}</div>
+              <Icon className="h-6 w-6 text-sky-300" />
+              <div className="mt-3 text-3xl font-bold text-white">{value}</div>
+              <div className="mt-1 text-[13px] font-semibold uppercase tracking-wider text-slate-400">{title}</div>
             </div>
           ))}
         </div>
 
         {notes.length > 0 && (
-          <section className="mt-5 rounded-xl border border-slate-800 bg-[#111824] p-4">
+          <section className="mt-6 rounded-2xl border border-slate-800 bg-[#111824] p-5 sm:p-6">
             <div className="flex items-center gap-2 text-xs font-black uppercase tracking-[.14em] text-sky-300">
               <Bell className="h-4 w-4" /> Recent notifications
             </div>
             <div className="mt-3 grid gap-2 md:grid-cols-2">
               {notes.slice(0, 4).map(note => (
-                <div key={note.id} className="rounded-xl border border-slate-800 bg-[#0b1018] p-3">
-                  <div className="text-xs font-extrabold text-slate-200">{note.title}</div>
-                  <p className="mt-1 text-xs text-slate-500">{note.message}</p>
+                <div key={note.id} className="rounded-xl border border-slate-800 bg-[#0b1018] p-4">
+                  <div className="text-[15px] font-semibold text-slate-200">{note.title}</div>
+                  <p className="mt-1.5 text-[14px] text-slate-400">{note.message}</p>
                 </div>
               ))}
             </div>
@@ -118,14 +118,14 @@ export default function AdminConsole({ issues, metrics, onSelect, onStatus }: {
           <button type="button" disabled={busy === resolutionId || resolutionNote.trim().length < 10 || !afterImage} onClick={() => void submitResolution()} className="mt-5 w-full rounded-xl bg-teal-600 px-4 py-3 text-sm font-black text-white hover:bg-teal-500 disabled:opacity-40">{busy === resolutionId ? "Saving resolution proof..." : "Mark resolved with proof"}</button>
         </section>}
 
-        <section className="mt-5 overflow-x-auto rounded-xl border border-slate-800 bg-[#111824]">
+        <section className="mt-6 overflow-x-auto rounded-2xl border border-slate-800 bg-[#111824]">
           <div className="min-w-[680px]">
-            <div className="grid grid-cols-[1.3fr_.7fr_.8fr] gap-4 border-b border-slate-800 bg-[#0e151f] px-5 py-3 text-[10px] font-black uppercase tracking-wider text-slate-500">
+            <div className="grid grid-cols-[1.3fr_.7fr_.8fr] gap-5 border-b border-slate-800 bg-[#0e151f] px-6 py-4 text-[13px] font-semibold uppercase tracking-wider text-slate-400">
               <span>Report</span><span>Status</span><span>Review action</span>
             </div>
             {rows.length === 0 && <div className="p-10 text-center text-sm text-slate-500">No reports in this queue.</div>}
             {rows.map(issue => (
-              <div key={issue.id} className="grid grid-cols-[1.3fr_.7fr_.8fr] items-center gap-4 border-b border-slate-800 px-5 py-4 text-sm">
+              <div key={issue.id} className="grid grid-cols-[1.3fr_.7fr_.8fr] items-center gap-5 border-b border-slate-800 px-6 py-5 text-[15px]">
                 <button onClick={() => onSelect(issue)} className="text-left">
                   <div className="font-bold text-slate-100 hover:text-sky-300">{issue.title}</div>
                   <div className="mt-1 text-xs text-slate-500">{issue.address} · {issue.category}</div>

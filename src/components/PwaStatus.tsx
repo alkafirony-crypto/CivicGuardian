@@ -43,11 +43,11 @@ export default function PwaStatus() {
   };
 
   return (
-    <div className="fixed bottom-4 left-1/2 z-[1200] flex w-[min(92vw,520px)] -translate-x-1/2 items-center gap-3 rounded-2xl border border-slate-700 bg-[#101925] p-3 text-sm text-slate-200 shadow-2xl" role="status">
-      {updateReady ? <RefreshCw className="h-5 w-5 shrink-0 text-sky-300" /> : <Download className="h-5 w-5 shrink-0 text-sky-300" />}
+    <div className="fixed bottom-5 left-1/2 z-[1200] flex w-[min(92vw,560px)] -translate-x-1/2 items-center gap-3 rounded-xl border border-[#625c57] bg-[#2c2927] p-3.5 text-[14px] text-white shadow-2xl" role="status">
+      {updateReady ? <RefreshCw className="h-5 w-5 shrink-0 text-[#e0ff89]" /> : <Download className="h-5 w-5 shrink-0 text-[#e0ff89]" />}
       <span className="min-w-0 flex-1">{updateReady ? "A safer, newer CivicGuardian version is ready." : "Install CivicGuardian for quicker mobile access and offline drafts."}</span>
-      <button type="button" onClick={updateReady ? update : install} className="rounded-lg bg-sky-600 px-3 py-2 text-xs font-black text-white">{updateReady ? "Update" : "Install"}</button>
-      <button type="button" onClick={() => setHidden(true)} className="rounded-lg p-1 text-slate-500 hover:text-white" aria-label="Dismiss"><X className="h-4 w-4" /></button>
+      <button type="button" onClick={updateReady ? update : install} className="rounded-lg bg-[#e0ff89] px-4 py-2 text-[14px] font-bold text-[#2c2927]">{updateReady ? "Update" : "Install"}</button>
+      <button type="button" onClick={() => setHidden(true)} className="rounded-lg p-1.5 text-slate-400 hover:text-white" aria-label="Dismiss"><X className="h-4 w-4" /></button>
     </div>
   );
 }

@@ -56,7 +56,7 @@ function metricsFromIssues(issues: CivicIssue[]): DashboardMetrics {
 }
 
 function PageFallback() {
-  return <div className="mx-auto max-w-6xl space-y-3 px-4 py-6 sm:px-5" aria-label="Loading page"><div className="flex items-center gap-3"><Logo className="h-8 w-8" /><div className="cg-skeleton h-6 w-1/2 rounded-lg" /></div><div className="grid gap-3 md:grid-cols-3">{[1, 2, 3].map(item => <div key={item} className="cg-skeleton h-44 rounded-xl" />)}</div></div>;
+  return <div className="mx-auto max-w-7xl space-y-5 px-5 py-10 sm:px-8" aria-label="Loading page"><div className="flex items-center gap-3"><Logo className="h-10 w-10" /><div className="cg-skeleton h-8 w-1/2 rounded-lg" /></div><div className="grid gap-5 md:grid-cols-3">{[1, 2, 3].map(item => <div key={item} className="cg-skeleton h-52 rounded-2xl" />)}</div></div>;
 }
 
 export default function App() {
@@ -312,7 +312,7 @@ export default function App() {
   };
 
   return (
-    <div id="app-root" className="flex min-h-screen flex-col justify-between bg-[#f5f7fa] text-slate-900 selection:bg-teal-200 selection:text-teal-950">
+    <div id="app-root" className="flex min-h-screen flex-col justify-between bg-[#f4f2ef] text-[#2c2927] selection:bg-[#e0ff89] selection:text-[#2c2927]">
       <a href="#app-main-content" className="cg-skip-link">Skip to main content</a>
       <Navbar activeTab={activeTab} setActiveTab={navigate} stats={{ totalIssues: stats.totalIssues, resolvedIssues: stats.resolvedIssues, criticalCount: stats.criticalCount }} user={user} onAuth={() => setAuthOpen(true)} onLogout={handleLogout} />
 
@@ -332,7 +332,7 @@ export default function App() {
         </motion.div></AnimatePresence></Suspense>}
       </main>
 
-      <footer className="border-t border-slate-200 bg-white px-4 py-4 text-center text-[10px] text-slate-500"><div className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-2 sm:flex-row"><div className="flex items-center gap-2"><ShieldAlert className="h-3.5 w-3.5 text-teal-700" /><span>CivicGuardian © 2026 · Independent Bangladesh community safety project</span></div><div className="flex flex-wrap justify-center gap-3"><span>AI assessments are advisory</span><span>Coverage: Bangladesh</span><span>No official emergency dispatch</span></div></div></footer>
+      <footer className="border-t border-[#ded9d4] bg-white px-5 py-6 text-center text-[13px] text-slate-600"><div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-3 sm:flex-row"><div className="flex items-center gap-2"><ShieldAlert className="h-4 w-4 text-[#2c2927]" /><span>CivicGuardian © 2026 · Independent Bangladesh community safety project</span></div><div className="flex flex-wrap justify-center gap-4"><span>AI assessments are advisory</span><span>Coverage: Bangladesh</span><span>No official emergency dispatch</span></div></div></footer>
 
       <AuthModal open={authOpen} onClose={() => { setAuthOpen(false); setRequestedTab(null); }} onAuthenticated={authenticated} />
       <PwaStatus />

@@ -56,8 +56,8 @@ export default function NotificationsCenter() {
   };
 
   return (
-    <main className="cg-dark-page min-h-[calc(100vh-56px)]">
-      <div className="mx-auto max-w-5xl px-4 py-6 sm:px-5 lg:py-8">
+    <main className="cg-dark-page min-h-[calc(100vh-72px)]">
+      <div className="mx-auto max-w-7xl px-5 py-10 sm:px-8 lg:py-12">
         <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-end"><div><div className="cg-eyebrow flex items-center gap-2"><Bell className="h-3.5 w-3.5" />{t("notificationCenter")}</div><h1 className="mt-1.5 text-2xl font-black tracking-tight text-white sm:text-3xl">{t("notificationHeading")}</h1><p className="mt-1.5 text-[13px] leading-5 text-slate-400">{t("notificationHelp")}</p></div><div className="flex flex-wrap gap-2"><button type="button" onClick={() => setShowPreferences(value => !value)} className="cg-dark-button"><Settings2 className="h-4 w-4" />{t("preferences")}</button><button type="button" disabled={!unread} onClick={() => void readAll()} className="cg-dark-button disabled:opacity-40"><CheckCheck className="h-4 w-4" />{t("markAllRead")}</button><button type="button" onClick={() => void load()} className="cg-dark-button"><RefreshCw className={`h-4 w-4 ${busy ? "animate-spin" : ""}`} />{t("refresh")}</button></div></div>
 
         <div className="mt-5 flex items-center gap-2.5 rounded-lg border border-sky-500/15 bg-sky-500/[.06] px-3.5 py-2.5 text-xs text-sky-100"><CheckCheck className="h-4 w-4 text-sky-300" /><strong>{unread}</strong> {t("unread")}</div>

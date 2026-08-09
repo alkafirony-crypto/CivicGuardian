@@ -1,23 +1,38 @@
 @import "tailwindcss";
 
 @theme {
-  --font-sans: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-  --font-display: Inter, ui-sans-serif, system-ui, sans-serif;
+  --font-sans: "Work Sans", Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --font-display: "Work Sans", Inter, ui-sans-serif, system-ui, sans-serif;
   --font-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
 }
 
+:root {
+  --cg-ink: #2c2927;
+  --cg-ink-soft: #383431;
+  --cg-ink-muted: #514c48;
+  --cg-lime: #e0ff89;
+  --cg-blue: #5bcff4;
+  --cg-blue-soft: #bdecfb;
+  --cg-orange: #ff964a;
+  --cg-warm: #f4f2ef;
+  --cg-paper: #ffffff;
+  --cg-body: #334155;
+}
+
 body {
-  background-color: #f5f7fa;
-  color: #0f172a;
+  background-color: var(--cg-warm);
+  color: var(--cg-ink);
   font-family: var(--font-sans);
-  font-size: 14px;
-  line-height: 1.5;
+  font-size: 16px;
+  line-height: 1.6;
   overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 html {
   scroll-behavior: smooth;
-  font-size: 14px;
+  font-size: 16px;
 }
 
 @media (max-width: 767px) {
@@ -69,18 +84,68 @@ html {
 }
 
 button, input, select, textarea { font: inherit; }
-button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible, a:focus-visible { outline: 3px solid #5eead4; outline-offset: 2px; }
+button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible, a:focus-visible { outline: 3px solid var(--cg-lime); outline-offset: 3px; }
 
 .leaflet-container { max-width: 100%; isolation: isolate; contain: layout paint; font-family: var(--font-sans); }
 .leaflet-top, .leaflet-bottom { z-index: 400; }
 
-.cg-dark-page { background: #0b111b; color: #dbe7f3; }
-.cg-dark-card { border: 1px solid #223148; border-radius: 12px; background: #101925; padding: 16px; box-shadow: 0 10px 30px rgb(0 0 0 / 12%); }
-.cg-eyebrow { color: #7dd3fc; font-size: 11px; font-weight: 900; letter-spacing: .17em; text-transform: uppercase; }
-.cg-primary-button { display: inline-flex; align-items: center; justify-content: center; gap: 7px; border-radius: 8px; background: #0284c7; color: #fff; padding: 8px 12px; font-size: 12px; font-weight: 900; transition: .18s ease; box-shadow: 0 6px 18px rgb(2 132 199 / 14%); }
-.cg-primary-button:hover { background: #0ea5e9; transform: translateY(-1px); }
-.cg-dark-button { display: inline-flex; align-items: center; justify-content: center; gap: 7px; border: 1px solid #2b3b51; border-radius: 8px; background: #101925; color: #cbd5e1; padding: 8px 12px; font-size: 12px; font-weight: 800; }
-.cg-dark-button:hover { border-color: #3b82f6; background: #152236; color: #fff; }
+.cg-dark-page { background: var(--cg-ink); color: #fff; }
+.cg-dark-page > div { padding-top: clamp(2.25rem, 4vw, 3.5rem); padding-bottom: clamp(3rem, 5vw, 4.5rem); }
+.cg-dark-card { border: 1px solid var(--cg-ink-muted); border-radius: 18px; background: var(--cg-ink-soft); padding: 22px; box-shadow: 0 16px 36px rgb(0 0 0 / 14%); }
+.cg-eyebrow { color: var(--cg-lime); font-size: 13px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; }
+.cg-primary-button { display: inline-flex; min-height: 46px; align-items: center; justify-content: center; gap: 9px; border-radius: 10px; background: var(--cg-lime); color: var(--cg-ink); padding: 11px 18px; font-size: 15px; font-weight: 700; transition: .18s ease; box-shadow: 0 8px 22px rgb(0 0 0 / 12%); }
+.cg-primary-button:hover { background: #ebffb3; transform: translateY(-1px); }
+.cg-dark-button { display: inline-flex; min-height: 46px; align-items: center; justify-content: center; gap: 9px; border: 1px solid #6d6762; border-radius: 10px; background: #413d39; color: #fff; padding: 11px 17px; font-size: 15px; font-weight: 600; }
+.cg-dark-button:hover { border-color: var(--cg-blue); background: #4b4642; color: #fff; }
+
+/* Readable product scale. V10 used a 14 px root and many 8–13 px utilities,
+   which made real dashboards feel zoomed out on desktop displays. */
+.text-\[8px\], .text-\[9px\], .text-\[10px\] { font-size: 12px; }
+.text-\[11px\] { font-size: 13px; }
+.text-\[12px\] { font-size: 14px; }
+.text-\[13px\] { font-size: 15px; }
+
+main p { font-size: 15px; line-height: 1.65; }
+main button, main input, main select, main textarea { font-size: 15px; }
+main h1 { font-size: clamp(2rem, 2.7vw, 2.65rem); line-height: 1.12; letter-spacing: -.025em; }
+main h2 { line-height: 1.25; letter-spacing: -.012em; }
+
+/* Snap Send Solve-inspired palette, adapted to CivicGuardian's dashboards. */
+.cg-dark-page .text-sky-300 { color: var(--cg-lime); }
+.cg-dark-page .text-sky-200, .cg-dark-page .text-sky-100 { color: var(--cg-blue-soft); }
+.cg-dark-page .text-slate-100, .cg-dark-page .text-slate-200 { color: #fff; }
+.cg-dark-page .text-slate-300, .cg-dark-page .text-slate-400 { color: #d8d4d0; }
+.cg-dark-page .text-slate-500, .cg-dark-page .text-slate-600 { color: #aaa39d; }
+.cg-dark-page .border-slate-800, .cg-dark-page .border-\[\#223148\] { border-color: var(--cg-ink-muted); }
+.cg-dark-page .bg-\[\#101925\], .cg-dark-page .bg-\[\#111824\], .cg-dark-page .bg-\[\#111b2b\] { background-color: var(--cg-ink-soft); }
+.cg-dark-page .bg-\[\#0b1018\], .cg-dark-page .bg-\[\#0b111b\], .cg-dark-page .bg-\[\#0e151f\] { background-color: #312e2c; }
+.cg-dark-page .bg-sky-500\/10, .cg-dark-page .bg-sky-500\/\[\.04\] { background-color: rgb(91 207 244 / 14%); }
+.cg-dark-page section[class*="border"] { border-color: var(--cg-ink-muted); }
+.cg-dark-page select, .cg-dark-page textarea, .cg-dark-page input:not([type="checkbox"]) { border-color: #6d6762; background-color: #312e2c; color: #fff; }
+
+.cg-landing-hero { background: var(--cg-ink); }
+.cg-landing-hero::after {
+  content: "";
+  position: absolute;
+  width: 420px;
+  height: 420px;
+  right: -130px;
+  top: -180px;
+  border-radius: 999px;
+  background: var(--cg-blue);
+  opacity: .14;
+  filter: blur(12px);
+}
+.cg-hero-title { font-size: clamp(2.5rem, 4.5vw, 4.25rem) !important; line-height: 1.02 !important; letter-spacing: -.045em !important; }
+.cg-hero-panel { border-color: #5b5550; background: #383431; }
+.cg-highvis { background: var(--cg-lime); color: var(--cg-ink); }
+.cg-highvis:hover { background: #ebffb3; }
+
+@media (max-width: 767px) {
+  main h1 { font-size: clamp(1.85rem, 8vw, 2.25rem); }
+  .cg-hero-title { font-size: clamp(2.35rem, 11vw, 3.25rem) !important; }
+  main button, main input, main select, main textarea { font-size: 16px; }
+}
 
 @media (prefers-reduced-motion: reduce) {
   html { scroll-behavior: auto; }

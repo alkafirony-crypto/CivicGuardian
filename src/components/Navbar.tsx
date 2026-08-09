@@ -105,26 +105,26 @@ export default function Navbar({
   };
 
   return (
-    <header className="sticky top-0 z-50 border-b border-[#223149] bg-[#0b1220]/97 px-3 text-white shadow-[0_5px_18px_rgba(2,8,23,.10)] backdrop-blur-xl sm:px-4">
-      <div className="mx-auto flex h-14 max-w-6xl items-center justify-between gap-3">
+    <header className="sticky top-0 z-50 border-b border-[#514c48] bg-[#2c2927]/98 px-4 text-white shadow-[0_8px_24px_rgba(44,41,39,.14)] backdrop-blur-xl sm:px-6">
+      <div className="mx-auto flex h-[72px] max-w-7xl items-center justify-between gap-4">
         <button
           onClick={() => setActiveTab("landing")}
-          className="group flex min-w-0 items-center gap-2 text-left"
+          className="group flex min-w-0 items-center gap-2.5 text-left"
           aria-label="CivicGuardian home"
         >
-          <Logo className="h-8 w-8 shrink-0 transition group-hover:scale-[1.03]" />
+          <Logo className="h-10 w-10 shrink-0 transition group-hover:scale-[1.03]" />
           <span className="hidden sm:block">
-            <strong className="block text-[14px] leading-tight tracking-tight text-white">
+            <strong className="block text-[17px] font-bold leading-tight tracking-tight text-white">
               CivicGuardian
             </strong>
-            <span className="block max-w-[190px] truncate text-[8px] font-semibold uppercase tracking-[.12em] text-slate-500">
+            <span className="block max-w-[210px] truncate text-[11px] font-medium uppercase tracking-[.08em] text-[#bdecfb]">
               Bangladesh community safety
             </span>
           </span>
         </button>
 
         <nav
-          className="hidden items-center gap-0.5 lg:flex"
+          className="hidden items-center gap-1 lg:flex"
           aria-label="Primary navigation"
         >
           {nav.map((item) => {
@@ -136,18 +136,15 @@ export default function Navbar({
               <button
                 key={item.id}
                 onClick={() => go(item)}
-                className={`relative flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-[11px] font-semibold transition ${
+                className={`relative flex min-h-11 items-center gap-2 rounded-lg px-3 py-2 text-[14px] font-semibold transition ${
                   active
-                    ? "bg-sky-400/[.10] text-sky-200"
-                    : "text-slate-400 hover:bg-slate-800/70 hover:text-white"
+                    ? "bg-[#bdecfb] text-[#2c2927]"
+                    : "text-slate-200 hover:bg-white/10 hover:text-white"
                 }`}
               >
-                <Icon className="h-3.5 w-3.5" />
+                <Icon className="h-4 w-4" />
                 {item.label}
                 {item.id==="notifications"&&unreadCount>0&&<span className="grid min-w-4 place-items-center rounded-full bg-sky-500 px-1 text-[9px] font-black text-white" aria-label={`${unreadCount} unread notifications`}>{unreadCount>99?"99+":unreadCount}</span>}
-                {active && (
-                  <span className="absolute inset-x-3 -bottom-[12px] h-0.5 rounded-full bg-sky-400" />
-                )}
               </button>
             );
           })}
@@ -156,7 +153,7 @@ export default function Navbar({
         <div className="flex items-center gap-2">
           <button
             onClick={() => (user ? setActiveTab("report") : onAuth())}
-            className="hidden items-center gap-1.5 rounded-md bg-sky-600 px-3 py-2 text-[12px] font-extrabold text-white shadow-sm shadow-sky-950/20 transition hover:bg-sky-500 md:flex"
+            className="cg-highvis hidden min-h-11 items-center gap-2 rounded-lg px-4 py-2.5 text-[15px] font-bold shadow-sm transition md:flex"
           >
             <PlusCircle className="h-4 w-4" />
             {t("report")}
@@ -167,24 +164,24 @@ export default function Navbar({
               <button
                 type="button"
                 onClick={() => setUserMenuOpen((open) => !open)}
-                className="flex items-center gap-1.5 rounded-md border border-slate-700 bg-[#111b2b] px-1.5 py-1 transition hover:border-slate-600 hover:bg-slate-800"
+                className="flex min-h-11 items-center gap-2 rounded-lg border border-[#6d6762] bg-[#383431] px-2 py-1.5 transition hover:border-[#5bcff4] hover:bg-[#413d39]"
                 aria-haspopup="menu"
                 aria-expanded={userMenuOpen}
                 aria-label="Open account menu"
               >
                 {user.picture ? (
                   <img
-                    className="h-6 w-6 rounded bg-slate-800"
+                    className="h-8 w-8 rounded-md bg-[#514c48]"
                     src={user.picture}
                     alt=""
                     referrerPolicy="no-referrer"
                   />
                 ) : (
-                  <span className="grid h-6 w-6 place-items-center rounded bg-sky-500/10 text-[10px] font-black text-sky-300">
+                  <span className="grid h-8 w-8 place-items-center rounded-md bg-[#5bcff4]/15 text-[13px] font-bold text-[#bdecfb]">
                     {user.name.slice(0, 1).toUpperCase()}
                   </span>
                 )}
-                <span className="hidden max-w-24 truncate text-[11px] font-bold text-slate-200 lg:block">
+                <span className="hidden max-w-28 truncate text-[14px] font-semibold text-white xl:block">
                   {user.name}
                 </span>
                 <ChevronDown
@@ -229,7 +226,7 @@ export default function Navbar({
           ) : (
             <button
               onClick={onAuth}
-              className="flex items-center gap-1.5 rounded-md border border-sky-400/35 bg-sky-400/[.08] px-3 py-2 text-[12px] font-extrabold text-sky-100 transition hover:border-sky-400/60 hover:bg-sky-400/[.14]"
+              className="flex min-h-11 items-center gap-2 rounded-lg border border-[#5bcff4]/60 bg-[#5bcff4]/10 px-4 py-2.5 text-[15px] font-bold text-[#bdecfb] transition hover:border-[#5bcff4] hover:bg-[#5bcff4]/20"
             >
               <LogIn className="h-4 w-4" />
               {t("signIn")}
@@ -239,17 +236,17 @@ export default function Navbar({
       </div>
 
       <nav
-        className="mx-auto flex max-w-6xl gap-1 overflow-x-auto pb-1.5 lg:hidden"
+        className="mx-auto flex max-w-7xl gap-1.5 overflow-x-auto pb-2 lg:hidden"
         aria-label="Mobile navigation"
       >
         {nav.map((item) => (
           <button
             key={item.id}
             onClick={() => go(item)}
-            className={`flex shrink-0 items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-[11px] font-bold ${
+            className={`flex shrink-0 items-center gap-1.5 rounded-lg px-3 py-2 text-[13px] font-semibold ${
               activeTab === item.id
-                ? "bg-sky-400/[.10] text-sky-200"
-                : "text-slate-500"
+                ? "bg-[#bdecfb] text-[#2c2927]"
+                : "text-slate-300"
             }`}
           >
             {item.label}
@@ -259,7 +256,7 @@ export default function Navbar({
         {user && (
           <button
             onClick={() => setActiveTab("report")}
-            className="shrink-0 rounded-lg px-2.5 py-1.5 text-[11px] font-bold text-sky-300"
+            className="shrink-0 rounded-lg bg-[#e0ff89] px-3 py-2 text-[13px] font-bold text-[#2c2927]"
           >
             {t("report")}
           </button>

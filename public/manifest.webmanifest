@@ -4,8 +4,8 @@
   "description": "Trusted community hazard reporting across Bangladesh.",
   "start_url": "/#/home",
   "display": "standalone",
-  "background_color": "#0b111b",
-  "theme_color": "#0f766e",
+  "background_color": "#f4f2ef",
+  "theme_color": "#2c2927",
   "lang": "en",
   "icons": [
     { "src": "/logo.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }

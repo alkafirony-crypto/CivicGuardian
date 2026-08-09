@@ -61,7 +61,8 @@ if (isProduction) {
       directives: {
         defaultSrc: ["'self'"],
         scriptSrc: ["'self'", "https://accounts.google.com"],
-        styleSrc: ["'self'", "'unsafe-inline'", "https://accounts.google.com"],
+        styleSrc: ["'self'", "'unsafe-inline'", "https://accounts.google.com", "https://fonts.googleapis.com"],
+        fontSrc: ["'self'", "data:", "https://fonts.gstatic.com"],
         imgSrc: ["'self'", "data:", "blob:", "https://*.googleusercontent.com", "https://*.tile.openstreetmap.org", "https://*.basemaps.cartocdn.com"],
         connectSrc: ["'self'", "https://accounts.google.com", "https://*.googleapis.com"],
         frameSrc: ["https://accounts.google.com"],

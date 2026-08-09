@@ -1,10 +1,11 @@
-# CivicGuardian V11 fast-start civic-service interface
+# CivicGuardian V12 balanced professional frontend
 
 ## Completed
 
 - Reworked the frontend around proven civic-reporting patterns: location-first reporting, one clear report action, compact public data cards, visible progress, and privacy-aware community participation.
-- Reduced the base interface scale from 15 px to 14 px, constrained primary content to a 1152 px shell, reduced the navigation to 56 px, and removed billboard-sized page headings.
-- Tightened the landing page, public map, report wizard, report details, Community Heroes, citizen dashboard, notifications, and administrator console without removing any V9 behavior.
+- Rebalanced the V10 compact interface to a readable 16 px base, 72 px navigation, 32–42 px functional page headings, and a responsive 1280 px content shell.
+- Reworked typography, spacing, cards, tables, forms, calls to action, dashboards, and empty states across the landing page, public map, report wizard, report details, Community Heroes, citizen dashboard, notifications, and administrator console without removing any V11 behavior.
+- Added a professional Work Sans design system inspired by the strongest patterns on Snap Send Solve: warm black, high-visibility lime, sky blue, orange highlights, warm-neutral surfaces, strong contrast, and clear primary actions. CivicGuardian branding and workflows remain original.
 - Community Heroes now uses a practical 28–34 px page title, horizontal scoring summaries, denser leaderboard rows, and smaller empty/loading states.
 - Smooth optimistic voting, corroboration, dispute, follow, comment, and evidence flows with rollback and friendly errors.
 - Offline-safe seven-day report drafts, duplicate-submit protection, network timeouts, and previously loaded public report cache.
@@ -21,7 +22,7 @@
 - Bangladesh-wide public and reporting maps with national bounds, GPS, map-click reverse lookup, and Bangladesh-only address results.
 - Road-number-aware address search with normalized query fallbacks, multiple result choices, and immediate zoom appropriate to roads, neighbourhoods, cities, or districts.
 - One shared set of 11 civic categories across Gemini, report creation, public filters, map filters, backend validation, and routing queues. It includes fire, gas leakage, road damage, flooding, water/sewer, electrical hazards, waste, and public safety.
-- Compact typography, spacing, statistics, map controls, and desktop navigation so the interface no longer appears oversized.
+- Balanced typography, spacing, statistics, map controls, and desktop navigation so the interface is neither oversized nor difficult to read.
 - Immediate public landing-page rendering without waiting for report and statistics requests.
 - Cached public reports are restored before the live refresh, so repeat visits remain useful during a slow connection or service wake-up.
 - Cache-first application-shell and hashed-asset loading for repeat visits, with background refresh and safe API exclusions.
@@ -39,6 +40,7 @@
 - `npm run build`: passed
 - Service-worker JavaScript syntax check: passed.
 - Runtime smoke checks: public health, issues, and Bangladesh PWA manifest passed.
+- Runtime smoke checks also confirmed the V12 font, theme metadata, updated PWA cache, and static application shell.
 - Live geocoder check: `Road 12, Dhanmondi, Dhaka` returned two Bangladesh road results with immediate road-level zoom 17.
 
 ## Deployment

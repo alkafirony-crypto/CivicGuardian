@@ -1,4 +1,4 @@
-const CACHE = "civicguardian-shell-v3";
+const CACHE = "civicguardian-shell-v4";
 const SHELL = ["/", "/manifest.webmanifest", "/logo.svg"];
 
 async function updateCache(request, cacheKey = request) {

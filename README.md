@@ -31,7 +31,7 @@ This repository intentionally contains **no seeded incidents and no generated/st
 
 ## Frontend design
 
-CivicGuardian uses a compact civic-service interface rather than oversized marketing layouts. Its location-first entry point and short report steps are informed by established civic-reporting products, while its map-and-data view, visible status workflow, and privacy guidance remain specific to CivicGuardian's Bangladesh use case. The interface uses a 56 px navigation bar, a restrained 14 px base scale, 28–34 px page headings, a 1152 px content shell, compact report cards, and responsive form controls that remain comfortable on small Android screens.
+CivicGuardian uses a balanced civic-service interface rather than oversized marketing layouts or a cramped admin console. Its location-first entry point and short report steps are informed by established civic-reporting products, including the readable typography, bright high-visibility accents, and clear calls to action used by Snap Send Solve. CivicGuardian keeps its own identity, Bangladesh map-and-data view, trusted status workflow, and privacy guidance. The interface uses Work Sans, a 16 px base scale, a 72 px desktop navigation bar, 32–42 px functional page headings, a responsive 1280 px content shell, readable report cards, and touch-friendly controls on small Android screens.
 
 ## Bangladesh location system
 
