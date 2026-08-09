@@ -1,0 +1,18 @@
+import React from "react";
+
+export default function Logo({ className = "h-10 w-10", title = "CivicGuardian" }: { className?: string; title?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 64 64" role="img" aria-label={title}>
+      <defs>
+        <linearGradient id="cg-logo-gradient" x1="8" y1="6" x2="56" y2="58" gradientUnits="userSpaceOnUse">
+          <stop stopColor="#38bdf8" />
+          <stop offset="1" stopColor="#0f766e" />
+        </linearGradient>
+      </defs>
+      <path d="M32 4 55 13v17c0 15.2-9.2 25.2-23 30C18.2 55.2 9 45.2 9 30V13L32 4Z" fill="url(#cg-logo-gradient)" />
+      <path d="M32 15c-8.1 0-14 5.6-14 13.3 0 9.5 14 21.2 14 21.2s14-11.7 14-21.2C46 20.6 40.1 15 32 15Z" fill="#fff" fillOpacity=".96" />
+      <circle cx="32" cy="28" r="7.2" fill="#0f766e" />
+      <path d="m28.4 28.2 2.4 2.4 5.2-5.4" fill="none" stroke="#fff" strokeWidth="2.8" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}

@@ -1,178 +1,124 @@
 import React, { useRef, useState } from "react";
-import { Upload, X, FileImage, AlertCircle } from "lucide-react";
+import { AlertCircle, Camera, EyeOff, FileImage, Loader2, Upload, X } from "lucide-react";
 import { IssueImage } from "../common/IssueImage";
+import PrivacyImageEditor from "./PrivacyImageEditor";
 
 interface ImageUploaderProps {
   image: string | null;
-  setImage: (img: string | null) => void;
+  setImage: (image: string | null) => void;
   errorMsg?: string;
-  setErrorMsg: (msg: string) => void;
+  setErrorMsg: (message: string) => void;
+  compact?: boolean;
 }
 
-export default function ImageUploader({ image, setImage, errorMsg, setErrorMsg }: ImageUploaderProps) {
+function formatBytes(bytes: number) {
+  if (bytes < 1024) return `${bytes} B`;
+  return `${(bytes / 1024 / 1024).toFixed(1)} MB`;
+}
+
+async function imageSource(file: File) {
+  if ("createImageBitmap" in window) {
+    return createImageBitmap(file, { imageOrientation: "from-image" });
+  }
+  const url = URL.createObjectURL(file);
+  try {
+    const image = new Image();
+    await new Promise<void>((resolve, reject) => {
+      image.onload = () => resolve();
+      image.onerror = () => reject(new Error("The image could not be decoded."));
+      image.src = url;
+    });
+    return image;
+  } finally {
+    URL.revokeObjectURL(url);
+  }
+}
+
+async function optimize(file: File) {
+  const source = await imageSource(file);
+  const sourceWidth = "naturalWidth" in source ? source.naturalWidth : source.width;
+  const sourceHeight = "naturalHeight" in source ? source.naturalHeight : source.height;
+  const scale = Math.min(1, 1600 / Math.max(sourceWidth, sourceHeight));
+  const canvas = document.createElement("canvas");
+  canvas.width = Math.max(1, Math.round(sourceWidth * scale));
+  canvas.height = Math.max(1, Math.round(sourceHeight * scale));
+  const context = canvas.getContext("2d", { alpha: false });
+  if (!context) throw new Error("This browser could not prepare the evidence image.");
+  context.fillStyle = "#fff";
+  context.fillRect(0, 0, canvas.width, canvas.height);
+  context.drawImage(source, 0, 0, canvas.width, canvas.height);
+  if ("close" in source && typeof source.close === "function") source.close();
+  const dataUrl = canvas.toDataURL("image/webp", .84);
+  return { dataUrl, outputBytes: Math.round((dataUrl.length - dataUrl.indexOf(",") - 1) * .75), width: canvas.width, height: canvas.height };
+}
+
+export default function ImageUploader({ image, setImage, errorMsg, setErrorMsg, compact = false }: ImageUploaderProps) {
   const [isDragActive, setIsDragActive] = useState(false);
+  const [processing, setProcessing] = useState(false);
+  const [summary, setSummary] = useState("");
+  const [editing, setEditing] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const validateAndProcessFile = (file: File) => {
+  const validateAndProcessFile = async (file: File) => {
     setErrorMsg("");
-    
-    // Check file type
-    const validTypes = ["image/jpeg", "image/png", "image/webp"];
-    if (!validTypes.includes(file.type)) {
-      setErrorMsg("Unsupported file format. Please upload a JPG, PNG, or WEBP image.");
+    if (!["image/jpeg", "image/png", "image/webp"].includes(file.type)) {
+      setErrorMsg("Unsupported format. Choose a JPG, PNG, or WEBP image.");
       return;
     }
-
-    // Check size limit (10MB)
-    const maxSize = 10 * 1024 * 1024;
-    if (file.size > maxSize) {
-      setErrorMsg("File size exceeds 10MB limit. Please upload a smaller image.");
+    if (file.size > 10 * 1024 * 1024) {
+      setErrorMsg("The original image is larger than 10 MB. Choose a smaller photo.");
       return;
     }
-
-    const reader = new FileReader();
-    reader.onload = () => {
-      const result = reader.result as string;
-      
-      // If image is very large, compress it down before sending to save bandwidth and token counts
-      const img = new Image();
-      img.src = result;
-      img.onload = () => {
-        const maxDimension = 1200;
-        let width = img.width;
-        let height = img.height;
-        
-        if (width > maxDimension || height > maxDimension) {
-          if (width > height) {
-            height = Math.round((height * maxDimension) / width);
-            width = maxDimension;
-          } else {
-            width = Math.round((width * maxDimension) / height);
-            height = maxDimension;
-          }
-          
-          const canvas = document.createElement("canvas");
-          canvas.width = width;
-          canvas.height = height;
-          const ctx = canvas.getContext("2d");
-          if (ctx) {
-            ctx.drawImage(img, 0, 0, width, height);
-            const compressedBase64 = canvas.toDataURL("image/jpeg", 0.82);
-            setImage(compressedBase64);
-          } else {
-            setImage(result);
-          }
-        } else {
-          setImage(result);
-        }
-      };
-    };
-    reader.onerror = () => {
-      setErrorMsg("Failed to read image file. Please try again.");
-    };
-    reader.readAsDataURL(file);
-  };
-
-  const handleDrag = (e: React.DragEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    if (e.type === "dragenter" || e.type === "dragover") {
-      setIsDragActive(true);
-    } else if (e.type === "dragleave") {
-      setIsDragActive(false);
+    setProcessing(true);
+    try {
+      const result = await optimize(file);
+      if (result.outputBytes > 8 * 1024 * 1024) throw new Error("The optimized image is still too large. Choose a smaller photo.");
+      setImage(result.dataUrl);
+      setSummary(`Optimized from ${formatBytes(file.size)} to ${formatBytes(result.outputBytes)} · ${result.width}×${result.height} · metadata removed`);
+    } catch (error) {
+      setErrorMsg(error instanceof Error ? error.message : "The image could not be prepared. Please try another photo.");
+    } finally {
+      setProcessing(false);
     }
   };
 
-  const handleDrop = (e: React.DragEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setIsDragActive(false);
-    
-    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
-      validateAndProcessFile(e.dataTransfer.files[0]);
-    }
-  };
-
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files[0]) {
-      validateAndProcessFile(e.target.files[0]);
-    }
-  };
-
-  const clearImage = (e: React.MouseEvent) => {
-    e.stopPropagation();
+  const clearImage = () => {
     setImage(null);
-    if (fileInputRef.current) {
-      fileInputRef.current.value = "";
-    }
+    setSummary("");
+    if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
   return (
-    <div id="image-uploader-wrapper" className="space-y-2">
-      <label className="block text-xs font-mono text-gray-400 uppercase tracking-wider">
-        Report Photo (Required for Vision Agent Verification)
-      </label>
-
+    <div className="space-y-3">
       {image ? (
-        <div id="uploader-preview" className="relative rounded-xl overflow-hidden border border-gray-800 bg-gray-950 h-56 group shadow-lg">
-          <IssueImage src={image} alt="Report Preview" className="w-full h-full object-cover" />
-          <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity duration-350 flex items-center justify-center">
-            <button
-              type="button"
-              id="btn-remove-image"
-              onClick={clearImage}
-              className="px-4 py-2 bg-red-600/90 hover:bg-red-500 text-white text-xs font-medium rounded-lg shadow-lg flex items-center gap-2 transition-all transform scale-95 group-hover:scale-100 cursor-pointer"
-            >
-              <X className="w-3.5 h-3.5" />
-              <span>Remove Photo</span>
-            </button>
+        <div className={`relative overflow-hidden rounded-xl border border-slate-700 bg-slate-950 ${compact ? "h-44" : "h-64"}`}>
+          <IssueImage src={image} alt="Prepared citizen evidence preview" className="h-full w-full object-contain" />
+          <div className="absolute right-3 top-3 flex gap-2">
+            <button type="button" onClick={() => setEditing(true)} className="flex items-center gap-1.5 rounded-lg bg-slate-950/90 px-3 py-2 text-xs font-bold text-white shadow" aria-label="Hide sensitive areas in this image"><EyeOff className="h-4 w-4" /> <span className="hidden sm:inline">Hide sensitive area</span></button>
+            <button type="button" onClick={clearImage} className="rounded-lg bg-red-600 p-2 text-white shadow" aria-label="Remove photo"><X className="h-4 w-4" /></button>
           </div>
-          <div className="absolute top-3 left-3 px-2.5 py-1 bg-gray-950/80 backdrop-blur border border-gray-850 rounded text-[9px] font-mono text-cyan-400 flex items-center gap-1">
-            <FileImage className="w-3 h-3" />
-            <span>PIXEL VERIFICATION SCAN READY</span>
-          </div>
+          <span className="absolute bottom-3 left-3 rounded-lg bg-slate-950/85 px-2.5 py-1.5 text-[10px] font-bold text-teal-200"><FileImage className="mr-1 inline h-3 w-3" /> Evidence ready</span>
         </div>
       ) : (
-        <div
-          id="uploader-dropzone"
-          onDragEnter={handleDrag}
-          onDragOver={handleDrag}
-          onDragLeave={handleDrag}
-          onDrop={handleDrop}
+        <button
+          type="button"
+          onDragEnter={event => { event.preventDefault(); setIsDragActive(true); }}
+          onDragOver={event => event.preventDefault()}
+          onDragLeave={event => { event.preventDefault(); setIsDragActive(false); }}
+          onDrop={event => { event.preventDefault(); setIsDragActive(false); const file = event.dataTransfer.files[0]; if (file) void validateAndProcessFile(file); }}
           onClick={() => fileInputRef.current?.click()}
-          className={`border-2 border-dashed rounded-xl p-8 flex flex-col items-center justify-center gap-3 cursor-pointer group transition-all duration-300 ${
-            isDragActive 
-              ? "border-cyan-500 bg-cyan-950/20 shadow-lg shadow-cyan-500/5" 
-              : "border-gray-800 bg-gray-950/40 hover:bg-gray-900/10 hover:border-gray-700"
-          }`}
+          disabled={processing}
+          className={`flex w-full flex-col items-center justify-center gap-3 rounded-xl border-2 border-dashed p-7 text-center transition ${isDragActive ? "border-teal-500 bg-teal-50" : "border-slate-300 bg-slate-50 hover:border-teal-500"}`}
         >
-          <input
-            type="file"
-            ref={fileInputRef}
-            onChange={handleFileChange}
-            accept="image/jpeg,image/png,image/webp"
-            className="hidden"
-          />
-          <div className="p-4 bg-gray-900 group-hover:bg-cyan-950/40 rounded-full border border-gray-850 group-hover:border-cyan-900/50 transition-colors">
-            <Upload className="w-6 h-6 text-gray-400 group-hover:text-cyan-400" />
-          </div>
-          <div className="text-center">
-            <p className="text-xs font-semibold text-gray-200">
-              Drag & drop your issue image, or <span className="text-cyan-400 hover:underline">browse files</span>
-            </p>
-            <p className="text-[10px] text-gray-500 font-mono mt-1">
-              Supports JPEG, PNG, WEBP (Max 10MB)
-            </p>
-          </div>
-        </div>
+          {processing ? <Loader2 className="h-7 w-7 animate-spin text-teal-700" /> : <span className="grid h-12 w-12 place-items-center rounded-full bg-white text-teal-700 shadow-sm"><Camera className="h-6 w-6" /></span>}
+          <span className="text-sm font-bold text-slate-800">{processing ? "Optimizing photo and removing metadata..." : "Take a photo or choose a file"}</span>
+          <span className="text-xs text-slate-500">JPG, PNG, or WEBP · maximum original size 10 MB</span>
+        </button>
       )}
-
-      {errorMsg && (
-        <div className="flex items-center gap-2 p-3 bg-red-950/30 border border-red-900/50 rounded-lg text-xs text-red-400 font-mono">
-          <AlertCircle className="w-4 h-4 text-red-400" />
-          <span>{errorMsg}</span>
-        </div>
-      )}
+      <input ref={fileInputRef} type="file" accept="image/jpeg,image/png,image/webp" capture="environment" className="sr-only" onChange={event => { const file = event.target.files?.[0]; if (file) void validateAndProcessFile(file); }} />
+      {summary && <p className="flex items-center gap-2 text-xs text-teal-800"><Upload className="h-3.5 w-3.5" />{summary}</p>}
+      {errorMsg && <div className="flex items-start gap-2 rounded-lg border border-red-200 bg-red-50 p-3 text-xs text-red-800" role="alert"><AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />{errorMsg}</div>}
+      {editing && image && <PrivacyImageEditor image={image} onClose={() => setEditing(false)} onSave={next => { setImage(next); setEditing(false); setSummary("Privacy redactions applied · metadata removed"); }} />}
     </div>
   );
 }

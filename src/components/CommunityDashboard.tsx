@@ -1,16 +1,139 @@
-import React,{useEffect,useMemo,useState} from "react";
-import { Award,CheckCircle2,MapPin,Search,ShieldAlert,ThumbsUp,Users } from "lucide-react";
-import type { CivicIssue,ContributorSummary,DashboardMetrics } from "../types";
-import MapView from "./dashboard/MapView";
+import React, { lazy, Suspense, useEffect, useMemo, useState } from "react";
+import { Award, CalendarDays, CheckCircle2, Crosshair, ListFilter, Map, MapPin, Search, ShieldAlert, ThumbsUp, Users } from "lucide-react";
+import { categoryOptions } from "../config/civicCategories";
+import type { CivicIssue, ContributorSummary, DashboardMetrics } from "../types";
 import { IssueImage } from "./common/IssueImage";
-export default function CommunityDashboard({issues,metrics,onUpvote,onVerify,onNotAccurate,onSelectIssue,setActiveTab}:{issues:CivicIssue[];metrics:DashboardMetrics;onUpvote:(id:string)=>Promise<void>;onVerify:(id:string)=>Promise<void>;onNotAccurate:(id:string)=>Promise<void>;onSelectIssue:(i:CivicIssue)=>void;setActiveTab:(s:string)=>void}){
- const [q,setQ]=useState("");const [filter,setFilter]=useState("All");const [heroes,setHeroes]=useState<ContributorSummary[]>([]);const filtered=useMemo(()=>issues.filter(i=>(filter==="All"||i.status===filter)&&`${i.title} ${i.address} ${i.category}`.toLowerCase().includes(q.toLowerCase())),[issues,q,filter]);
- useEffect(()=>{fetch("/api/contributors").then(r=>r.ok?r.json():[]).then(setHeroes).catch(()=>setHeroes([]));},[issues]);
- const openIssue=(i:CivicIssue)=>{onSelectIssue(i);setActiveTab("detail")};
- return <main className="mx-auto max-w-7xl space-y-9 px-6 py-10"><section className="flex flex-col justify-between gap-5 md:flex-row md:items-end"><div><div className="text-xs font-black uppercase tracking-[.18em] text-teal-700">Dhaka community safety</div><h1 className="mt-2 text-3xl font-black tracking-tight text-slate-950">Hazard map & public reports</h1><p className="mt-2 max-w-2xl text-sm leading-6 text-slate-500">Public reports show citizen-submitted evidence and AI-assisted assessment. Official status changes are controlled by authorized administrators.</p></div><button onClick={()=>setActiveTab("report")} className="rounded-xl bg-teal-700 px-5 py-3 text-sm font-bold text-white hover:bg-teal-800">+ Report a hazard</button></section>
- <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">{[["Total reports",metrics.totalIssues,Users],["Critical",metrics.criticalCount,ShieldAlert],["Resolved",metrics.resolvedIssues,CheckCircle2],["Verified actions",metrics.totalVerifiedCount||0,ThumbsUp]].map(([l,v,I]:any)=><div key={l} className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm"><I className="h-5 w-5 text-teal-700"/><div className="mt-4 text-2xl font-black text-slate-950">{v}</div><div className="mt-1 text-xs font-bold uppercase tracking-wider text-slate-400">{l}</div></div>)}</section>
- <MapView issues={issues} onSelectIssue={openIssue}/>
- <section className="overflow-hidden rounded-2xl border border-[#223149] bg-[#0b1220] p-6 text-white shadow-xl sm:p-7"><div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-end"><div><div className="flex items-center gap-2 text-[11px] font-black uppercase tracking-[.17em] text-sky-300"><Award className="h-4 w-4"/>Community heroes</div><h2 className="mt-2 text-2xl font-black">Top contributors</h2><p className="mt-1 text-xs leading-5 text-slate-400">Ranking is calculated only from real CivicGuardian activity: submitted reports, community verifications and helpful votes.</p></div><button onClick={()=>setActiveTab("heroes")} className="text-xs font-extrabold text-sky-300 transition hover:text-sky-200">View full leaderboard →</button></div>{heroes.length?<div className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">{heroes.slice(0,8).map((h,index)=><div key={h.id} className="rounded-xl border border-slate-800 bg-[#111b2b] p-4"><div className="flex items-center gap-3"><span className="grid h-9 w-9 place-items-center rounded-full bg-sky-400/10 text-xs font-black text-sky-300">#{index+1}</span><div className="min-w-0"><div className="truncate text-sm font-extrabold text-slate-100">{h.name}</div><div className="text-[10px] font-bold text-slate-500">{h.score} contribution points</div></div></div><div className="mt-4 grid grid-cols-3 gap-1 text-center"><div><b className="block text-sm text-white">{h.reports}</b><span className="text-[9px] uppercase text-slate-600">reports</span></div><div><b className="block text-sm text-white">{h.verifications}</b><span className="text-[9px] uppercase text-slate-600">checks</span></div><div><b className="block text-sm text-white">{h.helpfulVotes}</b><span className="text-[9px] uppercase text-slate-600">votes</span></div></div></div>)}</div>:<div className="mt-6 rounded-xl border border-dashed border-slate-700 p-8 text-center text-sm text-slate-500">No contributor ranking yet. CivicGuardian will not invent leaderboard entries.</div>}</section>
- <section><div className="flex flex-col gap-3 rounded-2xl border border-slate-200 bg-white p-3 sm:flex-row"><div className="relative flex-1"><Search className="absolute left-3 top-3 h-4 w-4 text-slate-400"/><input value={q} onChange={e=>setQ(e.target.value)} placeholder="Search reports or locations" className="w-full rounded-xl border border-slate-200 py-2.5 pl-9 pr-3 text-sm outline-none focus:border-teal-600"/></div><select value={filter} onChange={e=>setFilter(e.target.value)} className="rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm">{[["All","All status"],["reported","Reported"],["under_review","Under review"],["in_progress","In progress"],["resolved","Resolved"]].map(([v,l])=><option value={v} key={v}>{l}</option>)}</select></div><div className="mt-5 grid gap-5 md:grid-cols-2 lg:grid-cols-3">{filtered.map(i=>{const sev=i.analysis?.vision?.severity||"Unassessed";return <article key={i.id} className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm"><button onClick={()=>openIssue(i)} className="block w-full text-left"><IssueImage src={i.imageUrl} alt={i.title} className="h-44 w-full object-cover"/><div className="p-5"><div className="flex items-center justify-between gap-2"><span className="text-[10px] font-black uppercase tracking-wider text-teal-700">{i.category}</span><span className="rounded-full bg-slate-100 px-2 py-1 text-[9px] font-bold uppercase text-slate-500">{i.status.replace("_"," ")}</span></div><h3 className="mt-2 line-clamp-2 font-black text-slate-900">{i.title}</h3><p className="mt-2 flex items-start gap-1 text-xs text-slate-500"><MapPin className="mt-.5 h-3.5 w-3.5 shrink-0"/>{i.address}</p><div className="mt-3 text-xs font-bold text-slate-500">AI severity: <span className="text-slate-800">{sev}</span></div></div></button><div className="grid grid-cols-3 border-t border-slate-100 text-[11px] font-bold"><button onClick={()=>onUpvote(i.id)} className={`p-3 hover:bg-slate-50 ${i.isUpvotedByMe?"text-teal-700":"text-slate-500"}`}>↑ {i.upvotes}</button><button onClick={()=>onVerify(i.id)} className={`border-x border-slate-100 p-3 hover:bg-slate-50 ${i.isVerifiedByMe?"text-teal-700":"text-slate-500"}`}>✓ {i.verifiedByCount}</button><button onClick={()=>onNotAccurate(i.id)} className={`p-3 hover:bg-slate-50 ${i.isNotAccurateByMe?"text-red-600":"text-slate-500"}`}>Dispute</button></div></article>})}</div></section>
- </main>;
+
+const MapView = lazy(() => import("./dashboard/MapView"));
+const terminalStatuses = new Set(["resolved", "rejected", "duplicate"]);
+const FILTER_KEY="civicguardian:public-report-filters";
+
+function savedFilters(){
+  try{return JSON.parse(sessionStorage.getItem(FILTER_KEY)||"{}");}catch{return {};}
+}
+
+function distanceKm(latA: number, lngA: number, latB: number, lngB: number) {
+  const toRadians = (value: number) => value * Math.PI / 180;
+  const dLat = toRadians(latB - latA);
+  const dLng = toRadians(lngB - lngA);
+  const a = Math.sin(dLat / 2) ** 2 + Math.cos(toRadians(latA)) * Math.cos(toRadians(latB)) * Math.sin(dLng / 2) ** 2;
+  return 6371 * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+}
+
+export default function CommunityDashboard({ issues, metrics, onUpvote, onVerify, onNotAccurate, onSelectIssue, setActiveTab, busyActions = new Set() }: {
+  issues: CivicIssue[];
+  metrics: DashboardMetrics;
+  onUpvote: (id: string) => Promise<void>;
+  onVerify: (id: string) => Promise<void>;
+  onNotAccurate: (id: string) => Promise<void>;
+  onSelectIssue: (issue: CivicIssue) => void;
+  setActiveTab: (tab: string) => void;
+  busyActions?: Set<string>;
+}) {
+  const initial=useMemo(savedFilters,[]);
+  const [query, setQuery] = useState(initial.query||"");
+  const [status, setStatus] = useState(initial.status||"All");
+  const [category, setCategory] = useState(initial.category||"All");
+  const [severity, setSeverity] = useState(initial.severity||"All");
+  const [dateRange, setDateRange] = useState(initial.dateRange||"All");
+  const [heroes, setHeroes] = useState<ContributorSummary[]>([]);
+  const [visibleCount, setVisibleCount] = useState(9);
+  const [showMap, setShowMap] = useState(false);
+  const [myLocation, setMyLocation] = useState<[number, number] | null>(null);
+  const [radius, setRadius] = useState(3);
+  const [locating, setLocating] = useState(false);
+  const [locationMessage, setLocationMessage] = useState("");
+
+  useEffect(() => {
+    fetch("/api/contributors").then(response => response.ok ? response.json() : []).then(setHeroes).catch(() => setHeroes([]));
+  }, [issues]);
+  useEffect(()=>{sessionStorage.setItem(FILTER_KEY,JSON.stringify({query,status,category,severity,dateRange}));},[query,status,category,severity,dateRange]);
+
+  const categories = useMemo(() => categoryOptions(issues.map(issue => issue.category)), [issues]);
+  useEffect(() => { if (!categories.includes(category)) setCategory("All"); }, [categories, category]);
+  const filtered = useMemo(() => {
+    const now = Date.now();
+    const cutoff = dateRange === "7" ? now - 7 * 86_400_000 : dateRange === "30" ? now - 30 * 86_400_000 : 0;
+    return issues.filter(issue => {
+      const text = `${issue.title} ${issue.address} ${issue.category} ${issue.description}`.toLowerCase();
+      const locationMatch = !myLocation || (issue.lat !== undefined && issue.lng !== undefined && distanceKm(myLocation[0], myLocation[1], issue.lat, issue.lng) <= radius);
+      return (status === "All" || (status === "open" ? !terminalStatuses.has(issue.status) : issue.status === status))
+        && (category === "All" || issue.category === category)
+        && (severity === "All" || issue.analysis?.vision?.severity === severity)
+        && (!cutoff || new Date(issue.createdAt).getTime() >= cutoff)
+        && text.includes(query.trim().toLowerCase())
+        && locationMatch;
+    });
+  }, [issues, status, category, severity, dateRange, query, myLocation, radius]);
+  const visible = filtered.slice(0, visibleCount);
+
+  useEffect(() => setVisibleCount(9), [query, status, category, severity, dateRange, myLocation, radius]);
+
+  const openIssue = (issue: CivicIssue) => {
+    onSelectIssue(issue);
+    setActiveTab("detail");
+  };
+
+  const useMyArea = () => {
+    if (!navigator.geolocation) { setLocationMessage("Location is not supported by this browser. You can still use every public filter."); return; }
+    setLocating(true);
+    setLocationMessage("Your location is used only in this browser to filter nearby public reports. It is not saved or shared.");
+    navigator.geolocation.getCurrentPosition(
+      position => { setMyLocation([position.coords.latitude, position.coords.longitude]); setLocating(false); setShowMap(true); setLocationMessage("Showing public reports near your current area. Your location was not uploaded."); },
+      () => { setLocating(false); setLocationMessage("Location permission was not granted. CivicGuardian still works with manual filters and map search."); },
+      { enableHighAccuracy: false, timeout: 10_000 },
+    );
+  };
+
+  return (
+    <main className="mx-auto max-w-6xl space-y-4 px-4 py-5 sm:px-5 sm:py-6">
+      <section className="flex flex-col justify-between gap-4 md:flex-row md:items-end">
+        <div><div className="text-[10px] font-black uppercase tracking-[.16em] text-teal-700">Bangladesh community safety</div><h1 className="mt-1.5 text-xl font-black tracking-tight text-slate-950 sm:text-2xl">Hazard map & public reports</h1><p className="mt-1.5 max-w-2xl text-[13px] leading-5 text-slate-500">Explore citizen evidence across Bangladesh, follow progress, and help corroborate reports. AI suggestions remain advisory.</p></div>
+        <button type="button" onClick={() => setActiveTab("report")} className="rounded-lg bg-teal-700 px-4 py-2.5 text-xs font-bold text-white hover:bg-teal-800">+ Report a hazard</button>
+      </section>
+
+      <section className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">{[["Total reports", metrics.totalIssues, Users], ["Critical", metrics.criticalCount, ShieldAlert], ["Resolved", metrics.resolvedIssues, CheckCircle2], ["Verified actions", metrics.totalVerifiedCount || 0, ThumbsUp]].map(([label, value, Icon]: any) => <div key={label} className="flex items-center gap-3 rounded-lg border border-slate-200 bg-white px-3.5 py-3 shadow-sm"><span className="grid h-8 w-8 place-items-center rounded-lg bg-teal-50"><Icon className="h-4 w-4 text-teal-700" /></span><div><div className="text-lg font-black leading-none text-slate-950">{value}</div><div className="mt-1 text-[9px] font-bold uppercase tracking-wider text-slate-400">{label}</div></div></div>)}</section>
+
+      <section className="rounded-xl border border-sky-200 bg-sky-50 p-3.5" aria-labelledby="my-area-heading">
+        <div className="flex flex-col justify-between gap-4 lg:flex-row lg:items-center">
+          <div><div id="my-area-heading" className="flex items-center gap-2 text-sm font-black text-sky-950"><Crosshair className="h-4 w-4" />My Area</div><p className="mt-1 max-w-2xl text-xs leading-5 text-sky-900">See nearby open hazards without creating an account preference or storing your private location. Permission is requested only when you click the button.</p></div>
+          <div className="flex flex-wrap gap-2">
+            {myLocation && <label className="flex items-center gap-2 rounded-xl border border-sky-200 bg-white px-3 text-xs font-bold text-slate-700">Within<select value={radius} onChange={event => setRadius(Number(event.target.value))} className="bg-transparent py-2.5 outline-none">{[1, 3, 5, 10].map(value => <option key={value} value={value}>{value} km</option>)}</select></label>}
+            <button type="button" onClick={useMyArea} disabled={locating} className="rounded-xl bg-sky-700 px-4 py-2.5 text-xs font-black text-white disabled:opacity-50">{locating ? "Finding area..." : myLocation ? "Refresh my area" : "Use my current area"}</button>
+            {myLocation && <button type="button" onClick={() => { setMyLocation(null); setLocationMessage(""); }} className="rounded-xl border border-sky-300 bg-white px-4 py-2.5 text-xs font-bold text-sky-900">Clear</button>}
+          </div>
+        </div>
+        {locationMessage && <p className="mt-3 text-xs text-sky-900" role="status">{locationMessage}</p>}
+        {myLocation && <div className="mt-3 rounded-xl bg-white/75 px-3 py-2 text-xs font-bold text-sky-950">{filtered.filter(issue=>issue.analysis?.vision?.severity==="Critical").length} critical AI-flagged report{filtered.filter(issue=>issue.analysis?.vision?.severity==="Critical").length===1?"":"s"} within this view. Treat AI severity as advisory and follow verified safety guidance.</div>}
+      </section>
+
+      <section className="rounded-xl border border-slate-200 bg-white p-3 shadow-sm">
+        <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-[1.4fr_repeat(4,.7fr)]">
+          <label className="relative"><span className="sr-only">Search reports</span><Search className="absolute left-3 top-3 h-4 w-4 text-slate-400" /><input value={query} onChange={event => setQuery(event.target.value)} placeholder="Search reports or locations" className="w-full rounded-xl border border-slate-200 py-2.5 pl-9 pr-3 text-sm outline-none focus:border-teal-600" /></label>
+          <label><span className="sr-only">Category</span><select value={category} onChange={event => setCategory(event.target.value)} className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm">{categories.map(value => <option key={value}>{value}</option>)}</select></label>
+          <label><span className="sr-only">Status</span><select value={status} onChange={event => setStatus(event.target.value)} className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm">{[["All", "All statuses"], ["open", "Open"], ["under_review", "Under review"], ["in_progress", "In progress"], ["resolved", "Resolved"]].map(([value, label]) => <option value={value} key={value}>{label}</option>)}</select></label>
+          <label><span className="sr-only">AI severity</span><select value={severity} onChange={event => setSeverity(event.target.value)} className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm">{["All", "Critical", "High", "Medium", "Low"].map(value => <option key={value} value={value}>{value === "All" ? "All severities" : `${value} severity`}</option>)}</select></label>
+          <label className="relative"><CalendarDays className="pointer-events-none absolute left-3 top-3 h-4 w-4 text-slate-400" /><span className="sr-only">Date range</span><select value={dateRange} onChange={event => setDateRange(event.target.value)} className="w-full rounded-xl border border-slate-200 bg-white py-2.5 pl-9 pr-3 text-sm">{[["All", "Any date"], ["7", "Last 7 days"], ["30", "Last 30 days"]].map(([value, label]) => <option value={value} key={value}>{label}</option>)}</select></label>
+        </div>
+        <div className="mt-3 flex flex-wrap items-center justify-between gap-2 border-t border-slate-100 pt-3"><span className="flex items-center gap-2 text-xs font-semibold text-slate-500"><ListFilter className="h-4 w-4" />{filtered.length} matching public report{filtered.length === 1 ? "" : "s"}</span><button type="button" onClick={() => setShowMap(value => !value)} className="flex items-center gap-2 rounded-lg border border-slate-200 px-3 py-2 text-xs font-bold text-slate-700"><Map className="h-4 w-4" />{showMap ? "Hide map" : "Show interactive map"}</button></div>
+      </section>
+
+      {showMap && <Suspense fallback={<div className="cg-skeleton h-[470px] rounded-xl" aria-label="Loading interactive map" />}><MapView issues={filtered} onSelectIssue={openIssue} /></Suspense>}
+
+      <section className="overflow-hidden rounded-xl border border-[#223149] bg-[#0b1220] p-4 text-white shadow-lg sm:p-5">
+        <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-end"><div><div className="flex items-center gap-2 text-[11px] font-black uppercase tracking-[.17em] text-sky-300"><Award className="h-4 w-4" />Community heroes</div><h2 className="mt-2 text-2xl font-black">Top contributors</h2><p className="mt-1 text-xs leading-5 text-slate-400">Points come only from real reports and community actions. Administrator workflow updates never earn points.</p></div><button type="button" onClick={() => setActiveTab("heroes")} className="text-xs font-extrabold text-sky-300 hover:text-sky-200">View full leaderboard →</button></div>
+        {heroes.length ? <div className="mt-4 grid gap-2 sm:grid-cols-2 lg:grid-cols-4">{heroes.slice(0, 8).map((hero, index) => <div key={hero.id} className="rounded-lg border border-slate-800 bg-[#111b2b] p-3"><div className="flex items-center gap-2.5"><span className="grid h-8 w-8 place-items-center rounded-full bg-sky-400/10 text-[10px] font-black text-sky-300">#{index + 1}</span><div className="min-w-0"><div className="flex items-center gap-2"><div className="truncate text-xs font-extrabold text-slate-100">{hero.name}</div>{hero.role === "admin" && <span className="rounded bg-violet-500/15 px-1.5 py-0.5 text-[8px] font-black uppercase text-violet-300">Admin</span>}</div><div className="text-[9px] font-bold text-slate-500">{hero.score} contribution points</div></div></div></div>)}</div> : <div className="mt-4 rounded-lg border border-dashed border-slate-700 p-6 text-center text-xs text-slate-500">No contributor ranking yet. CivicGuardian will not invent leaderboard entries.</div>}
+      </section>
+
+      <section aria-labelledby="report-list-heading">
+        <h2 id="report-list-heading" className="sr-only">Filtered public reports</h2>
+        {visible.length ? <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">{visible.map(issue => {
+          const issueSeverity = issue.analysis?.vision?.severity || "Unassessed";
+          const busy = busyActions.has(issue.id);
+          return <article key={issue.id} className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm"><button type="button" onClick={() => openIssue(issue)} className="block w-full text-left"><IssueImage src={issue.imageUrl} alt={`Citizen evidence for ${issue.title}`} className="h-36 w-full object-cover" /><div className="p-4"><div className="flex items-center justify-between gap-2"><span className="text-[9px] font-black uppercase tracking-wider text-teal-700">{issue.category}</span><span className="rounded-full bg-slate-100 px-2 py-1 text-[8px] font-bold uppercase text-slate-500">{issue.status.replaceAll("_", " ")}</span></div><h3 className="mt-1.5 line-clamp-2 text-[13px] font-black text-slate-900">{issue.title}</h3><p className="mt-1.5 flex items-start gap-1 text-[11px] text-slate-500"><MapPin className="mt-0.5 h-3.5 w-3.5 shrink-0" />{issue.address}</p><div className="mt-2 text-[10px] font-bold text-slate-500">AI severity: <span className="text-slate-800">{issueSeverity}</span></div></div></button><div className="grid grid-cols-3 border-t border-slate-100 text-[10px] font-bold"><button type="button" disabled={busy} onClick={() => void onUpvote(issue.id)} className={`p-2.5 hover:bg-slate-50 disabled:opacity-50 ${issue.isUpvotedByMe ? "text-teal-700" : "text-slate-500"}`} aria-pressed={issue.isUpvotedByMe}>Support {issue.upvotes}</button><button type="button" disabled={busy} onClick={() => void onVerify(issue.id)} className={`border-x border-slate-100 p-2.5 hover:bg-slate-50 disabled:opacity-50 ${issue.isVerifiedByMe ? "text-teal-700" : "text-slate-500"}`} aria-pressed={issue.isVerifiedByMe}>Confirm {issue.verifiedByCount}</button><button type="button" disabled={busy} onClick={() => void onNotAccurate(issue.id)} className={`p-2.5 hover:bg-slate-50 disabled:opacity-50 ${issue.isNotAccurateByMe ? "text-red-600" : "text-slate-500"}`} aria-pressed={issue.isNotAccurateByMe}>Dispute</button></div></article>;
+        })}</div> : <div className="rounded-2xl border border-dashed border-slate-300 bg-white p-12 text-center"><Search className="mx-auto h-7 w-7 text-slate-400" /><div className="mt-3 font-bold text-slate-700">No reports match these filters</div><p className="mt-1 text-sm text-slate-500">Clear a filter or expand your My Area distance.</p></div>}
+        {visibleCount < filtered.length && <div className="mt-6 text-center"><button type="button" onClick={() => setVisibleCount(count => count + 9)} className="rounded-xl border border-slate-300 bg-white px-5 py-3 text-sm font-bold text-slate-700 hover:border-teal-500">Load 9 more reports</button></div>}
+      </section>
+    </main>
+  );
 }

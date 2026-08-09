@@ -16,10 +16,41 @@ export interface ContributorSummary {
   id: string;
   name: string;
   picture?: string;
+  role?: 'citizen' | 'admin';
+  badges?: string[];
   reports: number;
   verifications: number;
   helpfulVotes: number;
   score: number;
+}
+
+export type ResolutionVerdict = 'confirmed' | 'unresolved' | 'review';
+
+export interface ResolutionProof {
+  afterImageUrl: string;
+  note: string;
+  submittedAt: string;
+  submittedBy: string;
+}
+
+export interface ResolutionFeedbackSummary {
+  confirmed: number;
+  unresolved: number;
+  review: number;
+  mine?: ResolutionVerdict;
+}
+
+export interface DuplicateCandidate {
+  issue: CivicIssue;
+  distanceMeters: number;
+  similarityScore: number;
+  reasons: string[];
+}
+
+export interface NotificationPreferences {
+  statusUpdates: boolean;
+  adminUpdates: boolean;
+  resolutionRequests: boolean;
 }
 
 export interface VisionAgentOutput {
@@ -95,6 +126,10 @@ export interface CivicIssue {
   additionalImages?: string[];
   comments?: IssueComment[];
   verificationHistory?: VerificationHistoryEvent[];
+  followersCount?: number;
+  isFollowedByMe?: boolean;
+  resolutionProof?: ResolutionProof;
+  resolutionFeedback?: ResolutionFeedbackSummary;
 }
 
 export interface DashboardMetrics {

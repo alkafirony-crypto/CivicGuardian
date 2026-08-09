@@ -1,24 +1,270 @@
-import React from "react";
-import { Award, BarChart3, Bell, ChevronDown, LayoutDashboard, LogIn, MapPinned, PlusCircle, ShieldCheck } from "lucide-react";
+import React, { useEffect, useRef, useState } from "react";
+import {
+  Award,
+  BarChart3,
+  Bell,
+  ChevronDown,
+  LayoutDashboard,
+  Loader2,
+  LogIn,
+  LogOut,
+  MapPinned,
+  PlusCircle,
+} from "lucide-react";
 import type { AppUser } from "../types";
+import Logo from "./Logo";
+import {useLanguage} from "../i18n";
 
-type Props={activeTab:string;setActiveTab:(s:string)=>void;stats?:any;user:AppUser|null;onAuth:()=>void;onLogout:()=>void};
+type Props = {
+  activeTab: string;
+  setActiveTab: (tab: string) => void;
+  stats?: any;
+  user: AppUser | null;
+  onAuth: () => void;
+  onLogout: () => void | Promise<void>;
+};
 
-export default function Navbar({activeTab,setActiveTab,user,onAuth,onLogout}:Props){
- const publicNav=[
-  {id:"dashboard",label:"Map & Reports",icon:MapPinned},
-  {id:"heroes",label:"Community Heroes",icon:Award},
- ];
- const signedInNav=user ? [
-  {id:"citizen",label:"Citizen Dashboard",icon:LayoutDashboard},
-  {id:"notifications",label:"Notifications",icon:Bell},
- ] : [];
- const adminNav=user?.role==="admin" ? [{id:"admin",label:"Admin Dashboard",icon:BarChart3}] : [];
- const nav=[...publicNav,...signedInNav,...adminNav];
- const go=(item:{id:string})=>setActiveTab(item.id);
- return <header className="sticky top-0 z-50 border-b border-[#223149] bg-[#0b1220]/95 px-4 text-white shadow-[0_8px_28px_rgba(2,8,23,.12)] backdrop-blur-xl"><div className="mx-auto flex min-h-16 max-w-7xl items-center justify-between gap-3">
-  <button onClick={()=>setActiveTab("landing")} className="group flex min-w-0 items-center gap-2.5 text-left" aria-label="CivicGuardian home"><span className="grid h-9 w-9 shrink-0 place-items-center rounded-lg border border-sky-400/20 bg-sky-400/[.08] text-sky-300 transition group-hover:border-sky-400/40 group-hover:bg-sky-400/[.12]"><ShieldCheck className="h-[18px] w-[18px]"/></span><span className="hidden sm:block"><strong className="block text-[15px] leading-tight tracking-tight text-white">CivicGuardian</strong><span className="block max-w-[220px] truncate text-[9px] font-semibold uppercase tracking-[.13em] text-slate-500">Dhaka community safety</span></span></button>
-  <nav className="hidden items-center gap-0.5 xl:flex" aria-label="Primary navigation">{nav.map(n=>{const I=n.icon;const active=activeTab===n.id||(n.id==="dashboard"&&activeTab==="detail");return <button key={n.id} onClick={()=>go(n)} className={`relative flex items-center gap-1.5 rounded-lg px-2.5 py-2 text-[12px] font-semibold transition ${active?"bg-sky-400/[.10] text-sky-200":"text-slate-400 hover:bg-slate-800/70 hover:text-white"}`}><I className="h-3.5 w-3.5"/>{n.label}{active&&<span className="absolute inset-x-3 -bottom-[13px] h-0.5 rounded-full bg-sky-400"/>}</button>})}</nav>
-  <div className="flex items-center gap-2"><button onClick={()=>user?setActiveTab("report"):onAuth()} className="hidden items-center gap-2 rounded-lg bg-sky-600 px-3 py-2 text-[13px] font-extrabold text-white shadow-sm shadow-sky-950/20 transition hover:bg-sky-500 md:flex"><PlusCircle className="h-4 w-4"/>Report</button>{user?<div className="group relative"><button className="flex items-center gap-2 rounded-lg border border-slate-700 bg-[#111b2b] px-2 py-1.5">{user.picture?<img className="h-7 w-7 rounded-md bg-slate-800" src={user.picture} alt="" referrerPolicy="no-referrer"/>:<span className="grid h-7 w-7 place-items-center rounded-md bg-sky-500/10 text-xs font-black text-sky-300">{user.name.slice(0,1).toUpperCase()}</span>}<span className="hidden max-w-24 truncate text-xs font-bold text-slate-200 lg:block">{user.name}</span><ChevronDown className="h-3.5 w-3.5 text-slate-500"/></button><div className="invisible absolute right-0 top-full mt-2 w-56 rounded-xl border border-slate-700 bg-[#111b2b] p-2 opacity-0 shadow-2xl transition group-hover:visible group-hover:opacity-100"><div className="px-3 py-2 text-xs"><div className="font-bold text-slate-200">{user.email}</div><div className="mt-1 capitalize text-sky-300">{user.role} account</div></div><button onClick={onLogout} className="w-full rounded-lg px-3 py-2 text-left text-xs font-semibold text-slate-400 hover:bg-slate-800">Sign out</button></div></div>:<button onClick={onAuth} className="flex items-center gap-2 rounded-lg border border-sky-400/35 bg-sky-400/[.08] px-3 py-2 text-[13px] font-extrabold text-sky-100 transition hover:border-sky-400/60 hover:bg-sky-400/[.14]"><LogIn className="h-4 w-4"/>Sign in</button>}</div>
- </div><nav className="mx-auto flex max-w-7xl gap-1 overflow-x-auto pb-2 xl:hidden" aria-label="Mobile navigation">{nav.map(n=><button key={n.id} onClick={()=>go(n)} className={`flex shrink-0 items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-[11px] font-bold ${activeTab===n.id?"bg-sky-400/[.10] text-sky-200":"text-slate-500"}`}>{n.label}</button>)}{user&&<button onClick={()=>setActiveTab("report")} className="shrink-0 rounded-lg px-2.5 py-1.5 text-[11px] font-bold text-sky-300">Report Hazard</button>}</nav></header>;
+export default function Navbar({
+  activeTab,
+  setActiveTab,
+  user,
+  onAuth,
+  onLogout,
+}: Props) {
+  const [userMenuOpen, setUserMenuOpen] = useState(false);
+  const [isSigningOut, setIsSigningOut] = useState(false);
+  const [unreadCount,setUnreadCount]=useState(0);
+  const userMenuRef = useRef<HTMLDivElement>(null);
+  const {t}=useLanguage();
+
+  const publicNav = [
+    { id: "dashboard", label: t("map"), icon: MapPinned },
+    { id: "heroes", label: t("heroes"), icon: Award },
+  ];
+  const signedInNav = user
+    ? [
+        { id: "citizen", label: t("dashboard"), icon: LayoutDashboard },
+        { id: "notifications", label: t("notifications"), icon: Bell },
+      ]
+    : [];
+  const adminNav =
+    user?.role === "admin"
+      ? [{ id: "admin", label: t("admin"), icon: BarChart3 }]
+      : [];
+  const nav = [...publicNav, ...signedInNav, ...adminNav];
+
+  useEffect(() => {
+    const closeOnOutsideClick = (event: MouseEvent) => {
+      if (
+        userMenuRef.current &&
+        !userMenuRef.current.contains(event.target as Node)
+      ) {
+        setUserMenuOpen(false);
+      }
+    };
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setUserMenuOpen(false);
+    };
+
+    document.addEventListener("mousedown", closeOnOutsideClick);
+    document.addEventListener("keydown", closeOnEscape);
+    return () => {
+      document.removeEventListener("mousedown", closeOnOutsideClick);
+      document.removeEventListener("keydown", closeOnEscape);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!user) setUserMenuOpen(false);
+  }, [user]);
+
+  useEffect(()=>{
+    if(!user){setUnreadCount(0);return;}
+    let active=true;
+    const load=()=>fetch("/api/me/notifications").then(r=>r.ok?r.json():[]).then((rows:any[])=>{if(active)setUnreadCount(rows.filter(row=>!row.read).length);}).catch(()=>undefined);
+    void load();
+    const interval=window.setInterval(load,30_000);
+    window.addEventListener("civicguardian:notifications-changed",load);
+    return()=>{active=false;window.clearInterval(interval);window.removeEventListener("civicguardian:notifications-changed",load);};
+  },[user,activeTab]);
+
+  const go = (item: { id: string }) => {
+    setUserMenuOpen(false);
+    setActiveTab(item.id);
+  };
+
+  const handleLogout = async () => {
+    if (isSigningOut) return;
+    setIsSigningOut(true);
+    try {
+      await onLogout();
+      setUserMenuOpen(false);
+    } finally {
+      setIsSigningOut(false);
+    }
+  };
+
+  return (
+    <header className="sticky top-0 z-50 border-b border-[#223149] bg-[#0b1220]/97 px-3 text-white shadow-[0_5px_18px_rgba(2,8,23,.10)] backdrop-blur-xl sm:px-4">
+      <div className="mx-auto flex h-14 max-w-6xl items-center justify-between gap-3">
+        <button
+          onClick={() => setActiveTab("landing")}
+          className="group flex min-w-0 items-center gap-2 text-left"
+          aria-label="CivicGuardian home"
+        >
+          <Logo className="h-8 w-8 shrink-0 transition group-hover:scale-[1.03]" />
+          <span className="hidden sm:block">
+            <strong className="block text-[14px] leading-tight tracking-tight text-white">
+              CivicGuardian
+            </strong>
+            <span className="block max-w-[190px] truncate text-[8px] font-semibold uppercase tracking-[.12em] text-slate-500">
+              Bangladesh community safety
+            </span>
+          </span>
+        </button>
+
+        <nav
+          className="hidden items-center gap-0.5 lg:flex"
+          aria-label="Primary navigation"
+        >
+          {nav.map((item) => {
+            const Icon = item.icon;
+            const active =
+              activeTab === item.id ||
+              (item.id === "dashboard" && activeTab === "detail");
+            return (
+              <button
+                key={item.id}
+                onClick={() => go(item)}
+                className={`relative flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-[11px] font-semibold transition ${
+                  active
+                    ? "bg-sky-400/[.10] text-sky-200"
+                    : "text-slate-400 hover:bg-slate-800/70 hover:text-white"
+                }`}
+              >
+                <Icon className="h-3.5 w-3.5" />
+                {item.label}
+                {item.id==="notifications"&&unreadCount>0&&<span className="grid min-w-4 place-items-center rounded-full bg-sky-500 px-1 text-[9px] font-black text-white" aria-label={`${unreadCount} unread notifications`}>{unreadCount>99?"99+":unreadCount}</span>}
+                {active && (
+                  <span className="absolute inset-x-3 -bottom-[12px] h-0.5 rounded-full bg-sky-400" />
+                )}
+              </button>
+            );
+          })}
+        </nav>
+
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => (user ? setActiveTab("report") : onAuth())}
+            className="hidden items-center gap-1.5 rounded-md bg-sky-600 px-3 py-2 text-[12px] font-extrabold text-white shadow-sm shadow-sky-950/20 transition hover:bg-sky-500 md:flex"
+          >
+            <PlusCircle className="h-4 w-4" />
+            {t("report")}
+          </button>
+
+          {user ? (
+            <div className="relative" ref={userMenuRef}>
+              <button
+                type="button"
+                onClick={() => setUserMenuOpen((open) => !open)}
+                className="flex items-center gap-1.5 rounded-md border border-slate-700 bg-[#111b2b] px-1.5 py-1 transition hover:border-slate-600 hover:bg-slate-800"
+                aria-haspopup="menu"
+                aria-expanded={userMenuOpen}
+                aria-label="Open account menu"
+              >
+                {user.picture ? (
+                  <img
+                    className="h-6 w-6 rounded bg-slate-800"
+                    src={user.picture}
+                    alt=""
+                    referrerPolicy="no-referrer"
+                  />
+                ) : (
+                  <span className="grid h-6 w-6 place-items-center rounded bg-sky-500/10 text-[10px] font-black text-sky-300">
+                    {user.name.slice(0, 1).toUpperCase()}
+                  </span>
+                )}
+                <span className="hidden max-w-24 truncate text-[11px] font-bold text-slate-200 lg:block">
+                  {user.name}
+                </span>
+                <ChevronDown
+                  className={`h-3.5 w-3.5 text-slate-500 transition-transform duration-200 ${
+                    userMenuOpen ? "rotate-180" : ""
+                  }`}
+                />
+              </button>
+
+              <div
+                role="menu"
+                className={`absolute right-0 top-[calc(100%+0.5rem)] w-56 origin-top-right rounded-xl border border-slate-700 bg-[#111b2b] p-2 shadow-2xl transition-all duration-150 ${
+                  userMenuOpen
+                    ? "visible translate-y-0 scale-100 opacity-100"
+                    : "invisible -translate-y-1 scale-95 opacity-0 pointer-events-none"
+                }`}
+              >
+                <div className="border-b border-slate-800 px-3 py-2 text-xs">
+                  <div className="truncate font-bold text-slate-200">
+                    {user.email}
+                  </div>
+                  <div className="mt-1 capitalize text-sky-300">
+                    {user.role} account
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  role="menuitem"
+                  onClick={handleLogout}
+                  disabled={isSigningOut}
+                  className="mt-1 flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-xs font-semibold text-slate-300 transition hover:bg-slate-800 hover:text-white disabled:cursor-wait disabled:opacity-60"
+                >
+                  {isSigningOut ? (
+                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                  ) : (
+                    <LogOut className="h-3.5 w-3.5" />
+                  )}
+                  {isSigningOut ? t("signingOut") : t("signOut")}
+                </button>
+              </div>
+            </div>
+          ) : (
+            <button
+              onClick={onAuth}
+              className="flex items-center gap-1.5 rounded-md border border-sky-400/35 bg-sky-400/[.08] px-3 py-2 text-[12px] font-extrabold text-sky-100 transition hover:border-sky-400/60 hover:bg-sky-400/[.14]"
+            >
+              <LogIn className="h-4 w-4" />
+              {t("signIn")}
+            </button>
+          )}
+        </div>
+      </div>
+
+      <nav
+        className="mx-auto flex max-w-6xl gap-1 overflow-x-auto pb-1.5 lg:hidden"
+        aria-label="Mobile navigation"
+      >
+        {nav.map((item) => (
+          <button
+            key={item.id}
+            onClick={() => go(item)}
+            className={`flex shrink-0 items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-[11px] font-bold ${
+              activeTab === item.id
+                ? "bg-sky-400/[.10] text-sky-200"
+                : "text-slate-500"
+            }`}
+          >
+            {item.label}
+            {item.id==="notifications"&&unreadCount>0&&<span className="rounded-full bg-sky-500 px-1.5 text-[9px] text-white">{unreadCount}</span>}
+          </button>
+        ))}
+        {user && (
+          <button
+            onClick={() => setActiveTab("report")}
+            className="shrink-0 rounded-lg px-2.5 py-1.5 text-[11px] font-bold text-sky-300"
+          >
+            {t("report")}
+          </button>
+        )}
+      </nav>
+    </header>
+  );
 }
