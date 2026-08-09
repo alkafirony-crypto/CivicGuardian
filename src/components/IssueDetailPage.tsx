@@ -27,6 +27,7 @@ export default function IssueDetailPage({ issue, onBack, onUpvote, onVerify, onN
   const [evidenceOpen, setEvidenceOpen] = useState(false);
   const [additionalImage, setAdditionalImage] = useState<string | null>(null);
   const [imageError, setImageError] = useState("");
+  const [evidenceNotice, setEvidenceNotice] = useState("");
   const [shareStatus, setShareStatus] = useState("");
   const ai = issue.analysis?.vision;
 
@@ -49,7 +50,9 @@ export default function IssueDetailPage({ issue, onBack, onUpvote, onVerify, onN
     setSending(true); setActionError("");
     try {
       await onAddImage(additionalImage);
-      setAdditionalImage(null); setEvidenceOpen(false);
+      setAdditionalImage(null);
+      setImageError("");
+      setEvidenceNotice("Evidence added. You can upload another photo now.");
     } catch (error) {
       setActionError(error instanceof Error ? error.message : "The evidence could not be added.");
     } finally {
@@ -113,7 +116,7 @@ export default function IssueDetailPage({ issue, onBack, onUpvote, onVerify, onN
 
           <section className="rounded-2xl border border-slate-200 bg-white p-5"><h2 className="font-black text-slate-900">Transparent status history</h2><div className="mt-5 space-y-5 border-l-2 border-slate-100 pl-5">{issue.timeline.map((event, index) => <div key={`${event.date}-${index}`} className="relative"><span className={`absolute -left-[27px] top-1 h-3 w-3 rounded-full border-2 border-white ${index === issue.timeline.length - 1 ? "bg-teal-700" : "bg-slate-300"}`} /><div className="text-xs font-black text-slate-800">{statusText(event.status)}</div><div className="mt-1 text-[11px] text-slate-400">{new Date(event.date).toLocaleString()}</div><p className="mt-1 text-xs leading-5 text-slate-500">{event.note}</p></div>)}</div></section>
 
-          <section className="rounded-2xl border border-slate-200 bg-white p-5"><button type="button" onClick={() => setEvidenceOpen(value => !value)} className="flex w-full items-center justify-between text-left"><span className="flex items-center gap-2"><ImagePlus className="h-4 w-4 text-teal-700" /><span className="font-black text-slate-900">Add useful evidence</span></span><span className="text-xs font-bold text-teal-700">{evidenceOpen ? "Close" : "Add"}</span></button>{evidenceOpen && <div className="mt-4"><p className="mb-3 text-xs leading-5 text-slate-500">Add only a lawful, relevant photo. Use the privacy editor before upload when needed.</p><ImageUploader compact image={additionalImage} setImage={setAdditionalImage} errorMsg={imageError} setErrorMsg={setImageError} /><button type="button" disabled={!additionalImage || sending} onClick={() => void addEvidence()} className="mt-3 w-full rounded-xl bg-teal-700 py-2.5 text-xs font-bold text-white disabled:opacity-40">{sending ? "Adding evidence..." : "Add to this report"}</button></div>}</section>
+          <section className="rounded-2xl border border-slate-200 bg-white p-5"><button type="button" onClick={() => setEvidenceOpen(value => !value)} className="flex w-full items-center justify-between text-left"><span className="flex items-center gap-2"><ImagePlus className="h-4 w-4 text-teal-700" /><span className="font-black text-slate-900">Add useful evidence</span></span><span className="text-xs font-bold text-teal-700">{evidenceOpen ? "Close" : "Add"}</span></button>{evidenceOpen && <div className="mt-4"><p className="mb-3 text-xs leading-5 text-slate-500">Add only a lawful, relevant photo. Use the privacy editor before upload when needed.</p>{evidenceNotice && <div className="mb-3 rounded-lg border border-teal-200 bg-teal-50 p-3 text-xs font-semibold text-teal-800" role="status">{evidenceNotice}</div>}<ImageUploader compact image={additionalImage} setImage={next => { setAdditionalImage(next); if (next) setEvidenceNotice(""); }} errorMsg={imageError} setErrorMsg={setImageError} /><button type="button" disabled={!additionalImage || sending} onClick={() => void addEvidence()} className="mt-3 w-full rounded-xl bg-teal-700 py-2.5 text-xs font-bold text-white disabled:opacity-40">{sending ? "Adding evidence..." : "Add to this report"}</button></div>}</section>
 
           <section className="rounded-2xl border border-slate-200 bg-white p-5"><div className="flex items-center gap-2"><MessageSquare className="h-4 w-4 text-teal-700" /><h2 className="font-black text-slate-900">Comments</h2></div><div className="mt-4 space-y-3">{(issue.comments || []).map(commentItem => <div key={commentItem.id} className="rounded-xl bg-slate-50 p-3"><div className="text-xs font-bold text-slate-700">{commentItem.author}</div><p className="mt-1 whitespace-pre-wrap text-xs leading-5 text-slate-600">{commentItem.text}</p></div>)}{!(issue.comments || []).length && <p className="text-xs text-slate-400">No comments yet.</p>}</div><form onSubmit={submitComment} className="mt-4"><label className="sr-only" htmlFor="report-comment">Add useful local information</label><textarea id="report-comment" value={comment} onChange={event => setComment(event.target.value)} maxLength={1500} rows={3} placeholder="Add useful local information" className="w-full resize-none rounded-xl border border-slate-300 p-3 text-sm" /><button disabled={sending || !comment.trim()} className="mt-2 w-full rounded-xl bg-teal-700 py-2.5 text-xs font-bold text-white disabled:opacity-40">{sending ? "Posting..." : "Post comment"}</button></form></section>
         </aside>

@@ -50,7 +50,7 @@ For a high-traffic public deployment, replace the community Nominatim endpoint w
 - User removal is confirmed, server-authorized, and audit-logged. It revokes sign-in, removes that account's comments and participation, and anonymizes report ownership while preserving the civic reports themselves.
 - New reports notify administrator accounts that already exist in the user database.
 - Citizens can follow reports independently of voting or commenting, use mark-all-read, and choose status, admin, and resolution notification preferences.
-- Community Heroes are ranked only from real citizen activity using the documented formula: reports ×5, verification actions ×2, votes ×1. Administrator accounts and all administrator activity are excluded from points and rankings. An empty database produces no fake leaderboard entries.
+- Community Heroes are ranked only from real citizen activity using the documented formula: reports ×5, verification actions ×2, votes ×1. Administrator accounts and all administrator activity are excluded from points and rankings. Citizens with a report receive the repeatable **Civic Reporter** badge; only the current #1 ranked citizen receives **Top Responder**. An empty database produces no fake leaderboard entries.
 
 ## Trusted resolution workflow
 
@@ -69,7 +69,7 @@ Gemini never marks a report resolved automatically.
 ## Smooth mobile experience
 
 - Report forms auto-save locally for seven days and never submit silently while offline.
-- Evidence images are orientation-corrected where supported, resized, re-encoded, and stripped of unnecessary metadata in the browser.
+- Evidence images are orientation-corrected where supported, resized, re-encoded, and stripped of unnecessary metadata in the browser. The file input resets after each selection, so users can replace a photo or upload more evidence without refreshing the page.
 - A built-in privacy editor permanently redacts selected sensitive regions without facial recognition.
 - Public report filters persist while navigating to details and back.
 - Map code is loaded only when needed. Public lists use incremental loading and the API supports limit/offset plus search filters.

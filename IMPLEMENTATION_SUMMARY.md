@@ -1,4 +1,4 @@
-# CivicGuardian V12 balanced professional frontend
+# CivicGuardian V15 badge and repeat-upload fix
 
 ## Completed
 
@@ -18,7 +18,10 @@
 - Consistent English-only interface copy. The language switch and previously saved Bengali preference are removed.
 - Original shield, pin, and verification logo; favicon; installable PWA; update prompt; offline app shell.
 - Transparent review queue wording, accessibility improvements, reduced-motion support, moderation endpoints, and production-safe indexes.
-- Admins can appear in Community Heroes for genuine community actions with an Admin badge. Admin workflow changes earn no points.
+- Administrator accounts are excluded from Community Heroes points, badges, and rankings.
+- Replaced the repeatable and misleading `First responder` badge with `Civic Reporter`; only the #1 ranked citizen receives `Top Responder`.
+- Evidence file inputs reset after every selection, including invalid selections, so choosing the same photo again works without refreshing.
+- Added a visible Replace Photo control and kept the additional-evidence panel ready for another upload after a successful submission.
 - Bangladesh-wide public and reporting maps with national bounds, GPS, map-click reverse lookup, and Bangladesh-only address results.
 - Road-number-aware address search with normalized query fallbacks, multiple result choices, and immediate zoom appropriate to roads, neighbourhoods, cities, or districts.
 - One shared set of 11 civic categories across Gemini, report creation, public filters, map filters, backend validation, and routing queues. It includes fire, gas leakage, road damage, flooding, water/sewer, electrical hazards, waste, and public safety.
@@ -36,7 +39,7 @@
 ## Verification
 
 - `npm run lint`: passed
-- `npm test`: 6 files, 14 tests passed
+- `npm test`: 7 files, 19 tests passed
 - `npm run build`: passed
 - Service-worker JavaScript syntax check: passed.
 - Runtime smoke checks: public health, issues, and Bangladesh PWA manifest passed.

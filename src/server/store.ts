@@ -34,9 +34,10 @@ function clone<T>(value: T): T {
   return JSON.parse(JSON.stringify(value));
 }
 
-function badgesFor(summary: Omit<ContributorSummary, "badges">): string[] {
+function badgesFor(summary: Omit<ContributorSummary, "badges">, isTopResponder = false): string[] {
   const badges: string[] = [];
-  if (summary.reports >= 1) badges.push("First responder");
+  if (isTopResponder) badges.push("Top Responder");
+  if (summary.reports >= 1) badges.push("Civic Reporter");
   if (summary.verifications >= 5) badges.push("Community verifier");
   if (summary.score >= 25) badges.push("Trusted contributor");
   return badges;
@@ -587,9 +588,13 @@ export class CivicStore {
     }
     return summaries
       .filter(summary => summary.score > 0)
-      .map(summary => ({ ...summary, badges: badgesFor(summary) }))
-      .sort((left, right) => right.score - left.score)
-      .slice(0, 12);
+      .sort((left, right) => right.score - left.score
+        || right.reports - left.reports
+        || right.verifications - left.verifications
+        || right.helpfulVotes - left.helpfulVotes
+        || left.name.localeCompare(right.name))
+      .slice(0, 12)
+      .map((summary, index) => ({ ...summary, badges: badgesFor(summary, index === 0) }));
   }
 
   async adminIds() {

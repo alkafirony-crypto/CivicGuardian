@@ -20,8 +20,23 @@ describe("citizen dashboard store",()=>{
   const user=await store.upsertUser({googleSub:"sub-2",email:"helper@example.com",name:"Helpful Citizen"},"citizen");
   await store.saveIssue({...issue,id:"CG-HERO"},user.id);
   await store.toggleVote("CG-HERO",user.id);
-  const heroes=await store.contributors();
+ const heroes=await store.contributors();
   expect(heroes[0]).toMatchObject({name:"Helpful Citizen",reports:1,helpfulVotes:1,score:6});
+  expect(heroes[0].badges).toEqual(expect.arrayContaining(["Top Responder","Civic Reporter"]));
+  expect(heroes[0].badges).not.toContain("First responder");
+ });
+ it("awards Top Responder only to the highest-ranked citizen",async()=>{
+  const store=new CivicStore();
+  const leader=await store.upsertUser({googleSub:"leader-sub",email:"leader@example.com",name:"Ranking Leader"},"citizen");
+  const reporter=await store.upsertUser({googleSub:"reporter-sub",email:"reporter@example.com",name:"Second Reporter"},"citizen");
+  await store.saveIssue({...issue,id:"CG-LEADER"},leader.id);
+  await store.saveIssue({...issue,id:"CG-REPORTER"},reporter.id);
+  await store.toggleVote("CG-LEADER",leader.id);
+  const heroes=await store.contributors();
+  expect(heroes.find(item=>item.id===leader.id)?.badges).toEqual(expect.arrayContaining(["Top Responder","Civic Reporter"]));
+  expect(heroes.find(item=>item.id===reporter.id)?.badges).toContain("Civic Reporter");
+  expect(heroes.filter(item=>item.badges?.includes("Top Responder"))).toHaveLength(1);
+  expect(heroes.flatMap(item=>item.badges||[])).not.toContain("First responder");
  });
  it("excludes administrator accounts from Community Heroes even after community actions",async()=>{
   const store=new CivicStore();

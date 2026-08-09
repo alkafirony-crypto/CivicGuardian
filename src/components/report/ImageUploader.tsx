@@ -1,4 +1,4 @@
-import React, { useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { AlertCircle, Camera, EyeOff, FileImage, Loader2, Upload, X } from "lucide-react";
 import { IssueImage } from "../common/IssueImage";
 import PrivacyImageEditor from "./PrivacyImageEditor";
@@ -52,12 +52,31 @@ async function optimize(file: File) {
   return { dataUrl, outputBytes: Math.round((dataUrl.length - dataUrl.indexOf(",") - 1) * .75), width: canvas.width, height: canvas.height };
 }
 
+export function takeSelectedImageFile(input: Pick<HTMLInputElement, "files" | "value">) {
+  const file = input.files?.[0];
+  input.value = "";
+  return file;
+}
+
 export default function ImageUploader({ image, setImage, errorMsg, setErrorMsg, compact = false }: ImageUploaderProps) {
   const [isDragActive, setIsDragActive] = useState(false);
   const [processing, setProcessing] = useState(false);
   const [summary, setSummary] = useState("");
   const [editing, setEditing] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (image) return;
+    setSummary("");
+    setEditing(false);
+    if (fileInputRef.current) fileInputRef.current.value = "";
+  }, [image]);
+
+  const openFilePicker = () => {
+    if (!fileInputRef.current) return;
+    fileInputRef.current.value = "";
+    fileInputRef.current.click();
+  };
 
   const validateAndProcessFile = async (file: File) => {
     setErrorMsg("");
@@ -98,6 +117,7 @@ export default function ImageUploader({ image, setImage, errorMsg, setErrorMsg, 
             <button type="button" onClick={clearImage} className="rounded-lg bg-red-600 p-2 text-white shadow" aria-label="Remove photo"><X className="h-4 w-4" /></button>
           </div>
           <span className="absolute bottom-3 left-3 rounded-lg bg-slate-950/85 px-2.5 py-1.5 text-[10px] font-bold text-teal-200"><FileImage className="mr-1 inline h-3 w-3" /> Evidence ready</span>
+          <button type="button" onClick={openFilePicker} disabled={processing} className="absolute bottom-3 right-3 flex items-center gap-1.5 rounded-lg bg-white px-3 py-2 text-xs font-bold text-slate-900 shadow disabled:opacity-50"><Camera className="h-4 w-4" />Replace photo</button>
         </div>
       ) : (
         <button
@@ -106,7 +126,7 @@ export default function ImageUploader({ image, setImage, errorMsg, setErrorMsg, 
           onDragOver={event => event.preventDefault()}
           onDragLeave={event => { event.preventDefault(); setIsDragActive(false); }}
           onDrop={event => { event.preventDefault(); setIsDragActive(false); const file = event.dataTransfer.files[0]; if (file) void validateAndProcessFile(file); }}
-          onClick={() => fileInputRef.current?.click()}
+          onClick={openFilePicker}
           disabled={processing}
           className={`flex w-full flex-col items-center justify-center gap-3 rounded-xl border-2 border-dashed p-7 text-center transition ${isDragActive ? "border-teal-500 bg-teal-50" : "border-slate-300 bg-slate-50 hover:border-teal-500"}`}
         >
@@ -115,7 +135,7 @@ export default function ImageUploader({ image, setImage, errorMsg, setErrorMsg, 
           <span className="text-xs text-slate-500">JPG, PNG, or WEBP · maximum original size 10 MB</span>
         </button>
       )}
-      <input ref={fileInputRef} type="file" accept="image/jpeg,image/png,image/webp" capture="environment" className="sr-only" onChange={event => { const file = event.target.files?.[0]; if (file) void validateAndProcessFile(file); }} />
+      <input ref={fileInputRef} type="file" accept="image/jpeg,image/png,image/webp" capture="environment" className="sr-only" onChange={event => { const file = takeSelectedImageFile(event.currentTarget); if (file) void validateAndProcessFile(file); }} />
       {summary && <p className="flex items-center gap-2 text-xs text-teal-800"><Upload className="h-3.5 w-3.5" />{summary}</p>}
       {errorMsg && <div className="flex items-start gap-2 rounded-lg border border-red-200 bg-red-50 p-3 text-xs text-red-800" role="alert"><AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />{errorMsg}</div>}
       {editing && image && <PrivacyImageEditor image={image} onClose={() => setEditing(false)} onSave={next => { setImage(next); setEditing(false); setSummary("Privacy redactions applied · metadata removed"); }} />}
