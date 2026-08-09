@@ -17,17 +17,18 @@ export default function NotificationsCenter() {
 
   const load = async () => {
     setBusy(true); setError("");
+    const preferencesRequest = apiJson<NotificationPreferences>("/api/me/notification-preferences", {}, 10_000)
+      .then(value => ({ value, error: "" }))
+      .catch(caught => ({ value: null, error: caught instanceof Error ? caught.message : "Notification preferences could not be loaded." }));
     try {
-      const [notifications, savedPreferences] = await Promise.all([
-        apiJson<CivicNotification[]>("/api/me/notifications"),
-        apiJson<NotificationPreferences>("/api/me/notification-preferences"),
-      ]);
-      setNotes(notifications); setPreferences(savedPreferences);
+      setNotes(await apiJson<CivicNotification[]>("/api/me/notifications", {}, 10_000));
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : "Notifications could not be loaded. Please try again.");
     } finally {
       setBusy(false);
     }
+    const preferenceResult = await preferencesRequest;
+    if (preferenceResult.value) setPreferences(preferenceResult.value);
   };
 
   useEffect(() => { void load(); }, []);
@@ -70,7 +71,7 @@ export default function NotificationsCenter() {
         ].map(([key, title, description]) => <label key={key} className="flex cursor-pointer items-start gap-3 rounded-xl border border-slate-800 bg-[#0b111b] p-4"><input type="checkbox" checked={preferences[key as keyof NotificationPreferences]} onChange={event => void savePreferences({ ...preferences, [key]: event.target.checked })} className="mt-1 accent-sky-500" /><span><span className="block text-xs font-bold text-slate-200">{title}</span><span className="mt-1 block text-[11px] leading-4 text-slate-500">{description}</span></span></label>)}</div></section>}
 
         <section className="mt-5 overflow-hidden rounded-2xl border border-[#223148] bg-[#101925]">
-          {busy && !notes.length ? <div className="space-y-3 p-5">{[1, 2, 3].map(item => <div key={item} className="cg-skeleton h-24 rounded-xl bg-slate-800" />)}</div> : !notes.length ? <div className="p-12 text-center"><Bell className="mx-auto h-8 w-8 text-slate-600" /><div className="mt-3 font-bold text-slate-300">{t("noNotifications")}</div><p className="mt-1 text-sm text-slate-500">{t("noNotificationsHelp")}</p></div> : <div className="divide-y divide-[#223148]">{notes.map(notification => <button type="button" key={notification.id} onClick={() => void read(notification)} className={`flex w-full gap-4 p-5 text-left transition hover:bg-slate-800/40 ${notification.read ? "" : "bg-sky-500/[.035]"}`}><span className={`mt-1.5 h-2.5 w-2.5 shrink-0 rounded-full ${notification.read ? "bg-slate-700" : "bg-sky-400"}`} /><div><div className="text-sm font-extrabold text-slate-100">{notification.title}</div><p className="mt-1 text-sm leading-6 text-slate-400">{notification.message}</p><div className="mt-2 text-[11px] text-slate-600">{new Date(notification.createdAt).toLocaleString()}</div></div></button>)}</div>}
+          {!notes.length ? <div className="p-12 text-center"><Bell className={`mx-auto h-8 w-8 ${busy ? "animate-pulse text-[#e0ff89]" : "text-slate-600"}`} /><div className="mt-3 font-bold text-slate-300">{busy ? "Checking for report updates…" : t("noNotifications")}</div><p className="mt-1 text-sm text-slate-500">{busy ? "The page is ready while your notifications reconnect." : t("noNotificationsHelp")}</p></div> : <div className="divide-y divide-[#223148]">{notes.map(notification => <button type="button" key={notification.id} onClick={() => void read(notification)} className={`flex w-full gap-4 p-5 text-left transition hover:bg-slate-800/40 ${notification.read ? "" : "bg-sky-500/[.035]"}`}><span className={`mt-1.5 h-2.5 w-2.5 shrink-0 rounded-full ${notification.read ? "bg-slate-700" : "bg-sky-400"}`} /><div><div className="text-sm font-extrabold text-slate-100">{notification.title}</div><p className="mt-1 text-sm leading-6 text-slate-400">{notification.message}</p><div className="mt-2 text-[11px] text-slate-600">{new Date(notification.createdAt).toLocaleString()}</div></div></button>)}</div>}
         </section>
       </div>
     </main>

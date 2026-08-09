@@ -23,6 +23,7 @@ type Route = { tab: Tab; issueId?: string };
 
 const emptyMetrics: DashboardMetrics = { totalIssues: 0, resolvedIssues: 0, averageConfidence: 0, criticalCount: 0, categoryDistribution: {} };
 const protectedTabs = new Set<Tab>(["citizen", "notifications", "report", "admin"]);
+const issueDataTabs = new Set<Tab>(["dashboard", "detail", "admin"]);
 
 function routeFromHash(): Route {
   const path = window.location.hash.replace(/^#\/?/, "").split("?")[0];
@@ -57,6 +58,10 @@ function metricsFromIssues(issues: CivicIssue[]): DashboardMetrics {
 
 function PageFallback() {
   return <div className="mx-auto max-w-7xl space-y-5 px-5 py-10 sm:px-8" aria-label="Loading page"><div className="flex items-center gap-3"><Logo className="h-10 w-10" /><div className="cg-skeleton h-8 w-1/2 rounded-lg" /></div><div className="grid gap-5 md:grid-cols-3">{[1, 2, 3].map(item => <div key={item} className="cg-skeleton h-52 rounded-2xl" />)}</div></div>;
+}
+
+function SessionFallback() {
+  return <div className="cg-dark-page min-h-[calc(100vh-72px)]"><div className="mx-auto max-w-7xl px-5 py-10 sm:px-8"><div className="rounded-2xl border border-[#514c48] bg-[#383431] p-6 text-white shadow-sm"><div className="flex items-center gap-3"><div className="grid h-10 w-10 place-items-center rounded-full bg-[#e0ff89] text-[#2c2927]"><ShieldAlert className="h-5 w-5" /></div><div><div className="font-black">Restoring your secure session</div><p className="mt-0.5 text-sm text-[#d8d4d0]">Your page will appear as soon as sign-in is confirmed.</p></div></div></div></div></div>;
 }
 
 export default function App() {
@@ -320,7 +325,7 @@ export default function App() {
 
       <main id="app-main-content" className="flex-grow" tabIndex={-1}>
         {activeTab === "landing" && errorMsg && !issues.length && <div className="border-b border-amber-200 bg-amber-50 px-4 py-2 text-center text-xs font-semibold text-amber-900" role="status">Live report data is still connecting. You can explore CivicGuardian now or <button type="button" onClick={() => void fetchData()} className="font-black underline underline-offset-2">retry</button>.</div>}
-        {isLoading && !issues.length && activeTab !== "landing" ? <PageFallback /> : errorMsg && !issues.length && activeTab !== "landing" ? <div className="mx-auto my-16 max-w-md rounded-2xl border border-red-200 bg-white p-6 text-center shadow-sm"><AlertCircle className="mx-auto h-8 w-8 text-red-600" /><p className="mt-3 font-black text-red-800">CivicGuardian is temporarily unavailable</p><p className="mt-2 text-sm leading-6 text-slate-600">{errorMsg}</p><button type="button" onClick={() => void fetchData()} className="mt-4 rounded-xl bg-slate-900 px-4 py-2.5 text-sm font-bold text-white">Retry connection</button></div> : <Suspense fallback={<PageFallback />}><AnimatePresence mode="wait"><motion.div key={activeTab} initial={reduceMotion ? false : { opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={reduceMotion ? undefined : { opacity: 0, y: -8 }} transition={{ duration: reduceMotion ? 0 : .18 }}>
+        {protectedTabs.has(activeTab) && !authReady ? <SessionFallback /> : issueDataTabs.has(activeTab) && isLoading && !issues.length ? <PageFallback /> : issueDataTabs.has(activeTab) && errorMsg && !issues.length ? <div className="mx-auto my-16 max-w-md rounded-2xl border border-red-200 bg-white p-6 text-center shadow-sm"><AlertCircle className="mx-auto h-8 w-8 text-red-600" /><p className="mt-3 font-black text-red-800">CivicGuardian is temporarily unavailable</p><p className="mt-2 text-sm leading-6 text-slate-600">{errorMsg}</p><button type="button" onClick={() => void fetchData()} className="mt-4 rounded-xl bg-slate-900 px-4 py-2.5 text-sm font-bold text-white">Retry connection</button></div> : <Suspense fallback={<PageFallback />}><AnimatePresence mode="wait"><motion.div key={activeTab} initial={reduceMotion ? false : { opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={reduceMotion ? undefined : { opacity: 0, y: -8 }} transition={{ duration: reduceMotion ? 0 : .18 }}>
           {activeTab === "landing" && <LandingPage setActiveTab={navigate} recentIssues={issues} setSelectedIssue={issue => { setSelectedIssue(issue); setActiveTab("detail"); }} user={user} />}
           {activeTab === "dashboard" && <CommunityDashboard issues={issues} metrics={stats} onUpvote={handleUpvote} onVerify={handleVerify} onNotAccurate={handleNotAccurate} onSelectIssue={issue => { setSelectedIssue(issue); setActiveTab("detail"); }} setActiveTab={navigate} busyActions={busyActions} />}
           {activeTab === "citizen" && user && <CitizenDashboard user={user} onReport={() => navigate("report")} onOpenReport={issue => { setSelectedIssue(issue); setActiveTab("detail"); }} />}

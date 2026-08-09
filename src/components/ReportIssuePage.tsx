@@ -55,6 +55,7 @@ export default function ReportIssuePage({ onSubmit, setActiveTab, setSelectedIss
   const [lat, setLat] = useState<number | null>(restored?.lat ?? null);
   const [lng, setLng] = useState<number | null>(restored?.lng ?? null);
   const [address, setAddress] = useState(restored?.address || "");
+  const [locationConfirmed, setLocationConfirmed] = useState(Boolean(restored?.address?.trim() && restored?.lat !== null && restored?.lat !== undefined && restored?.lng !== null && restored?.lng !== undefined));
   const [image, setImage] = useState<string | null>(restored?.image || null);
   const [title, setTitle] = useState(restored?.title || "");
   const [description, setDescription] = useState(restored?.description || "");
@@ -104,7 +105,7 @@ export default function ReportIssuePage({ onSubmit, setActiveTab, setSelectedIss
   const discardDraft = () => {
     if(hasDraftContent&&!window.confirm("Discard this saved report draft? This cannot be undone."))return;
     localStorage.removeItem(DRAFT_KEY);
-    setPhase("location"); setLat(null); setLng(null); setAddress(""); setImage(null); setTitle(""); setDescription("");
+    setPhase("location"); setLat(null); setLng(null); setAddress(""); setLocationConfirmed(false); setImage(null); setTitle(""); setDescription("");
     setCategory("Uncertain"); setEvidenceConsent(false); setAnalysis(null); setDuplicates([]); setContinueSeparate(false);
     setClientRequestId(newRequestId()); setDraftStatus(""); setError("");
   };
@@ -188,9 +189,9 @@ export default function ReportIssuePage({ onSubmit, setActiveTab, setSelectedIss
         <section>
           {phase === "location" && <div>
             <Suspense fallback={<div className="cg-skeleton h-[480px] rounded-xl" aria-label="Loading location map" />}>
-              <LocationPicker lat={lat} lng={lng} address={address} setAddress={setAddress} onChange={(nextLat, nextLng, suggestion) => { setLat(nextLat); setLng(nextLng); if (suggestion) setAddress(suggestion); }} />
+              <LocationPicker lat={lat} lng={lng} address={address} setAddress={setAddress} onConfirmationChange={setLocationConfirmed} onChange={(nextLat, nextLng, suggestion) => { setLat(nextLat); setLng(nextLng); if (suggestion) setAddress(suggestion); }} />
             </Suspense>
-            <button type="button" disabled={lat === null || lng === null || !address.trim()} onClick={() => setPhase("evidence")} className="mt-4 flex w-full items-center justify-center gap-2 rounded-lg bg-teal-700 px-4 py-3 text-xs font-bold text-white hover:bg-teal-800 disabled:cursor-not-allowed disabled:opacity-40">{t("continueEvidence")} <ArrowRight className="h-4 w-4" /></button>
+            <button type="button" disabled={lat === null || lng === null || !address.trim() || !locationConfirmed} onClick={() => setPhase("evidence")} className="mt-4 flex w-full items-center justify-center gap-2 rounded-lg bg-teal-700 px-4 py-3 text-xs font-bold text-white hover:bg-teal-800 disabled:cursor-not-allowed disabled:opacity-40">{t("continueEvidence")} <ArrowRight className="h-4 w-4" /></button>
           </div>}
 
           {phase === "evidence" && <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-7">
