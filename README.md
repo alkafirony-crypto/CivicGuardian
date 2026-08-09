@@ -46,10 +46,11 @@ For a high-traffic public deployment, replace the community Nominatim endpoint w
 - Signed-in citizens have a dedicated dashboard containing only their own submitted reports, lifecycle progress, and notifications.
 - Citizen Dashboard and Notifications are hidden from anonymous navigation and appear only after sign-in.
 - Report status changes create a citizen notification and appear in the report timeline.
-- Authorized administrators have a separate protected review dashboard with operational counts, recent alerts, filtering and status controls; Admin Dashboard is not exposed in anonymous or citizen navigation.
+- Authorized administrators have a separate protected dashboard with report review, operational counts, a registered-user directory, access removal, and comment moderation; Admin Dashboard is not exposed in anonymous or citizen navigation.
+- User removal is confirmed, server-authorized, and audit-logged. It revokes sign-in, removes that account's comments and participation, and anonymizes report ownership while preserving the civic reports themselves.
 - New reports notify administrator accounts that already exist in the user database.
 - Citizens can follow reports independently of voting or commenting, use mark-all-read, and choose status, admin, and resolution notification preferences.
-- Community Heroes are ranked only from real community activity using the documented formula: reports ×5, verification actions ×2, votes ×1. Genuine community actions by an admin may appear with an Admin badge; admin workflow changes never earn points. An empty database produces no fake leaderboard entries.
+- Community Heroes are ranked only from real citizen activity using the documented formula: reports ×5, verification actions ×2, votes ×1. Administrator accounts and all administrator activity are excluded from points and rankings. An empty database produces no fake leaderboard entries.
 
 ## Trusted resolution workflow
 
@@ -139,9 +140,9 @@ npm test
 npm run build
 ```
 
-Tests cover Gemini schema safety, admin-email allowlisting, representative locations across Bangladesh, road-number query normalization, map zoom selection, citizen report ownership, notifications, preferences, follows, resolution feedback, contributor scoring, and smart duplicate matching. GitHub Actions runs checks on pushes and pull requests.
+Tests cover Gemini schema safety, admin-email allowlisting, representative locations across Bangladesh, road-number query normalization, map zoom selection, citizen report ownership, notifications, preferences, follows, resolution feedback, citizen-only contributor scoring, user removal, comment deletion, and smart duplicate matching. GitHub Actions runs checks on pushes and pull requests.
 
-Startup applies each SQL file in `db/migrations` once, in filename order, and records successful filenames in `civicguardian_migrations`. `002_trusted_resolution.sql` is idempotent and adds follows, resolution feedback, notification preferences, moderation support, resolution proof, and supporting indexes without deleting existing users or reports.
+Startup applies each SQL file in `db/migrations` once, in filename order, and records successful filenames in `civicguardian_migrations`. `002_trusted_resolution.sql` adds the trusted-resolution workflow. `003_admin_management.sql` idempotently adds account-removal state and indexes for protected user and comment administration without deleting existing users or reports during migration.
 
 The production app restores cached public reports before refreshing them, renders the public landing page without waiting for the API, and uses a cached application shell on repeat visits. Hashed frontend assets receive long-lived immutable cache headers. These measures shorten application-controlled loading, but a Render Free web service can still show Render's own wake-up page after the service has been idle.
 

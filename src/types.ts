@@ -24,6 +24,27 @@ export interface ContributorSummary {
   score: number;
 }
 
+export interface AdminUserSummary {
+  id: string;
+  email: string;
+  name: string;
+  picture?: string;
+  role: 'citizen' | 'admin';
+  createdAt: string;
+  lastLoginAt: string;
+  reportCount: number;
+  commentCount: number;
+}
+
+export interface AdminCommentSummary {
+  id: string;
+  issueId: string;
+  issueTitle: string;
+  author: string;
+  text: string;
+  createdAt: string;
+}
+
 export type ResolutionVerdict = 'confirmed' | 'unresolved' | 'review';
 
 export interface ResolutionProof {

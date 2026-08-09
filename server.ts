@@ -80,6 +80,17 @@ if (isProduction) {
 
 app.use(express.json({ limit: "12mb" }));
 app.use(attachUser);
+app.use("/api", async (request: AuthRequest, response, next) => {
+  if (!request.user) return next();
+  try {
+    if (await store.isUserActive(request.user.id)) return next();
+    request.user = undefined;
+    clearSessionCookie(response);
+    return next();
+  } catch (error) {
+    return next(error);
+  }
+});
 app.use("/api", (_request, response, next) => {
   response.setHeader("Cache-Control", "no-store");
   next();
@@ -303,6 +314,41 @@ app.put("/api/me/notification-preferences", requireAuth, async (request: AuthReq
 });
 
 app.get("/api/contributors", async (_request, response) => response.json(await store.contributors()));
+
+app.get("/api/admin/users", requireAdmin, async (_request, response) => {
+  response.json(await store.listAdminUsers());
+});
+
+app.delete("/api/admin/users/:id", requireAdmin, actionLimiter, async (request: AuthRequest, response) => {
+  try {
+    const targetUserId = z.string().trim().min(2).max(100).parse(request.params.id);
+    if (targetUserId === request.user!.id) {
+      return response.status(409).json({ error: "You cannot remove your own active administrator account." });
+    }
+    const removed = await store.removeUser(targetUserId, request.user!.id);
+    if (!removed) return response.status(404).json({ error: "Active user not found." });
+    await store.audit(request.user!.id, "user.removed", undefined, { targetUserId, targetRole: removed.role });
+    response.json({ ok: true, removedUserId: targetUserId });
+  } catch (error: any) {
+    response.status(400).json({ error: error?.issues?.[0]?.message || error?.message || "User removal failed." });
+  }
+});
+
+app.get("/api/admin/comments", requireAdmin, async (_request, response) => {
+  response.json(await store.listAdminComments());
+});
+
+app.delete("/api/admin/comments/:id", requireAdmin, actionLimiter, async (request: AuthRequest, response) => {
+  try {
+    const commentId = z.string().trim().min(2).max(100).parse(request.params.id);
+    const deleted = await store.deleteComment(commentId);
+    if (!deleted) return response.status(404).json({ error: "Comment not found." });
+    await store.audit(request.user!.id, "comment.deleted", deleted.issueId, { commentId });
+    response.json({ ok: true, issueId: deleted.issueId });
+  } catch (error: any) {
+    response.status(400).json({ error: error?.issues?.[0]?.message || error?.message || "Comment deletion failed." });
+  }
+});
 
 app.post("/api/issues/duplicates/check", requireAuth, actionLimiter, async (request: AuthRequest, response) => {
   try {

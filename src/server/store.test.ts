@@ -23,13 +23,36 @@ describe("citizen dashboard store",()=>{
   const heroes=await store.contributors();
   expect(heroes[0]).toMatchObject({name:"Helpful Citizen",reports:1,helpfulVotes:1,score:6});
  });
- it("counts genuine admin community actions without counting workflow actions",async()=>{
+ it("excludes administrator accounts from Community Heroes even after community actions",async()=>{
   const store=new CivicStore();
   const admin=await store.upsertUser({googleSub:"admin-sub",email:"admin@example.com",name:"Community Admin"},"admin");
   await store.saveIssue({...issue,id:"CG-ADMIN-HERO"},admin.id);
   await store.setVerdict("CG-ADMIN-HERO",admin.id,"confirm");
-  const hero=(await store.contributors()).find(item=>item.id===admin.id);
-  expect(hero).toMatchObject({role:"admin",reports:1,verifications:1,score:7});
+  expect((await store.contributors()).find(item=>item.id===admin.id)).toBeUndefined();
+ });
+ it("lets administrators list users, delete comments, and revoke a user without deleting civic reports",async()=>{
+  const store=new CivicStore();
+  const admin=await store.upsertUser({googleSub:"admin-manager",email:"manager@example.com",name:"Manager"},"admin");
+  const citizen=await store.upsertUser({googleSub:"citizen-managed",email:"managed@example.com",name:"Managed Citizen"},"citizen");
+  await store.saveIssue({...issue,id:"CG-MANAGED"},citizen.id);
+  await store.addComment("CG-MANAGED",citizen,"Please review this location.");
+  await store.toggleVote("CG-MANAGED",citizen.id);
+  expect(await store.listAdminUsers()).toEqual(expect.arrayContaining([
+   expect.objectContaining({id:admin.id,role:"admin"}),
+   expect.objectContaining({id:citizen.id,reportCount:1,commentCount:1}),
+  ]));
+  const [comment]=await store.listAdminComments();
+  expect(comment).toMatchObject({issueId:"CG-MANAGED",author:"Managed Citizen"});
+  expect(await store.deleteComment(comment.id)).toEqual({issueId:"CG-MANAGED"});
+  expect(await store.listAdminComments()).toHaveLength(0);
+  await store.addComment("CG-MANAGED",citizen,"This comment is removed with the account.");
+  expect(await store.removeUser(citizen.id,admin.id)).toMatchObject({id:citizen.id});
+  expect(await store.isUserActive(citizen.id)).toBe(false);
+  expect(await store.getIssue("CG-MANAGED")).toBeDefined();
+  expect((await store.getIssue("CG-MANAGED"))?.comments).toHaveLength(0);
+  expect((await store.listAdminUsers()).some(user=>user.id===citizen.id)).toBe(false);
+  await expect(store.upsertUser({googleSub:"citizen-managed",email:"managed@example.com",name:"Managed Citizen"},"citizen"))
+   .rejects.toThrow("removed by an administrator");
  });
  it("supports following, resolution feedback, and notification preferences",async()=>{
   const store=new CivicStore();

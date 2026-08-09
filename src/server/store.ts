@@ -3,6 +3,8 @@ import path from "path";
 import { Pool } from "pg";
 import type { AuthUser, UserRole } from "./auth";
 import type {
+  AdminCommentSummary,
+  AdminUserSummary,
   CivicIssue,
   CivicNotification,
   ContributorSummary,
@@ -43,7 +45,9 @@ function badgesFor(summary: Omit<ContributorSummary, "badges">): string[] {
 export class CivicStore {
   private pool?: Pool;
   private memoryIssues: CivicIssue[] = [];
-  private users = new Map<string, AuthUser & { googleSub: string }>();
+  private users = new Map<string, AuthUser & { googleSub: string; createdAt: string; lastLoginAt: string }>();
+  private removedUserEmails = new Set<string>();
+  private memoryCommentOwners = new Map<string, string>();
   private votes = new Map<string, Set<string>>();
   private verdicts = new Map<string, Map<string, "confirm" | "dispute">>();
   private follows = new Map<string, Set<string>>();
@@ -105,11 +109,14 @@ export class CivicStore {
     role: UserRole,
   ): Promise<AuthUser> {
     if (!this.pool) {
+      const normalizedEmail = google.email.toLowerCase();
+      if (this.removedUserEmails.has(normalizedEmail)) throw new Error("This account has been removed by an administrator.");
       let user = [...this.users.values()].find(candidate => candidate.email === google.email);
+      const now = new Date().toISOString();
       if (!user) {
-        user = { id: `dev-${google.googleSub}`, ...google, role };
+        user = { id: `dev-${google.googleSub}`, ...google, role, createdAt: now, lastLoginAt: now };
       } else {
-        user = { ...user, ...google, role: user.role === "admin" ? "admin" : role };
+        user = { ...user, ...google, role: user.role === "admin" ? "admin" : role, lastLoginAt: now };
       }
       this.users.set(user.id, user);
       return user;
@@ -123,10 +130,127 @@ export class CivicStore {
          picture=EXCLUDED.picture,
          last_login_at=now(),
          role=CASE WHEN users.role='admin' THEN 'admin' ELSE EXCLUDED.role END
+       WHERE users.is_active=true
        RETURNING id::text,email,name,picture,role`,
       [google.googleSub, google.email, google.name, google.picture || null, role],
     );
+    if (!result.rows[0]) throw new Error("This account has been removed by an administrator.");
     return result.rows[0];
+  }
+
+  async isUserActive(userId: string) {
+    if (!this.pool) return this.users.has(userId);
+    const result = await this.pool.query("SELECT 1 FROM users WHERE id=$1 AND is_active=true", [userId]);
+    return Boolean(result.rowCount);
+  }
+
+  async listAdminUsers(): Promise<AdminUserSummary[]> {
+    if (!this.pool) {
+      return [...this.users.values()].map(user => ({
+        id: user.id,
+        email: user.email,
+        name: user.name,
+        picture: user.picture,
+        role: user.role,
+        createdAt: user.createdAt,
+        lastLoginAt: user.lastLoginAt,
+        reportCount: [...this.memoryReporters.values()].filter(ownerId => ownerId === user.id).length,
+        commentCount: [...this.memoryCommentOwners.values()].filter(ownerId => ownerId === user.id).length,
+      })).sort((left, right) => right.createdAt.localeCompare(left.createdAt));
+    }
+    const result = await this.pool.query(
+      `SELECT u.id::text,u.email,u.name,u.picture,u.role,
+        u.created_at AS "createdAt",u.last_login_at AS "lastLoginAt",
+        COUNT(DISTINCT i.id)::int AS "reportCount",
+        COUNT(DISTINCT c.id)::int AS "commentCount"
+       FROM users u
+       LEFT JOIN issues i ON i.reporter_id=u.id
+       LEFT JOIN comments c ON c.user_id=u.id AND c.is_hidden=false
+       WHERE u.is_active=true
+       GROUP BY u.id,u.email,u.name,u.picture,u.role,u.created_at,u.last_login_at
+       ORDER BY u.created_at DESC`,
+    );
+    return result.rows as AdminUserSummary[];
+  }
+
+  async listAdminComments(): Promise<AdminCommentSummary[]> {
+    if (!this.pool) {
+      return this.memoryIssues.flatMap(issue => (issue.comments || []).map(comment => ({
+        id: comment.id,
+        issueId: issue.id,
+        issueTitle: issue.title,
+        author: comment.author,
+        text: comment.text,
+        createdAt: comment.createdAt,
+      }))).sort((left, right) => right.createdAt.localeCompare(left.createdAt));
+    }
+    const result = await this.pool.query(
+      `SELECT c.id::text,c.issue_id AS "issueId",i.title AS "issueTitle",
+        c.author,c.text,c.created_at AS "createdAt"
+       FROM comments c
+       JOIN issues i ON i.id=c.issue_id
+       WHERE c.is_hidden=false
+       ORDER BY c.created_at DESC`,
+    );
+    return result.rows as AdminCommentSummary[];
+  }
+
+  async removeUser(userId: string, removedBy?: string) {
+    if (!this.pool) {
+      const user = this.users.get(userId);
+      if (!user) return undefined;
+      this.removedUserEmails.add(user.email.toLowerCase());
+      this.users.delete(userId);
+      this.votes.delete(userId);
+      this.verdicts.delete(userId);
+      this.follows.delete(userId);
+      this.resolutionFeedback.delete(userId);
+      this.memoryNotifications.delete(userId);
+      this.memoryPreferences.delete(userId);
+      for (const [issueId, ownerId] of this.memoryReporters) {
+        if (ownerId === userId) this.memoryReporters.delete(issueId);
+      }
+      for (const issue of this.memoryIssues) {
+        issue.comments = (issue.comments || []).filter(comment => this.memoryCommentOwners.get(comment.id) !== userId);
+      }
+      for (const [commentId, ownerId] of this.memoryCommentOwners) {
+        if (ownerId === userId) this.memoryCommentOwners.delete(commentId);
+      }
+      return user;
+    }
+
+    const client = await this.pool.connect();
+    try {
+      await client.query("BEGIN");
+      const target = await client.query(
+        `SELECT id::text,email,name,picture,role,created_at AS "createdAt",last_login_at AS "lastLoginAt"
+         FROM users WHERE id=$1 AND is_active=true FOR UPDATE`,
+        [userId],
+      );
+      if (!target.rowCount) {
+        await client.query("ROLLBACK");
+        return undefined;
+      }
+      await client.query("UPDATE issues SET reporter_id=NULL WHERE reporter_id=$1", [userId]);
+      await client.query("DELETE FROM comments WHERE user_id=$1", [userId]);
+      await client.query("DELETE FROM votes WHERE user_id=$1", [userId]);
+      await client.query("DELETE FROM verifications WHERE user_id=$1", [userId]);
+      await client.query("DELETE FROM issue_follows WHERE user_id=$1", [userId]);
+      await client.query("DELETE FROM resolution_feedback WHERE user_id=$1", [userId]);
+      await client.query("DELETE FROM notification_preferences WHERE user_id=$1", [userId]);
+      await client.query("DELETE FROM notifications WHERE user_id=$1", [userId]);
+      await client.query(
+        "UPDATE users SET is_active=false,removed_at=now(),removed_by=$2 WHERE id=$1",
+        [userId, removedBy || null],
+      );
+      await client.query("COMMIT");
+      return target.rows[0] as AdminUserSummary;
+    } catch (error) {
+      await client.query("ROLLBACK");
+      throw error;
+    } finally {
+      client.release();
+    }
   }
 
   private async pgIssue(row: any, userId?: string): Promise<CivicIssue> {
@@ -434,7 +558,7 @@ export class CivicStore {
   async contributors(): Promise<ContributorSummary[]> {
     let summaries: ContributorSummary[];
     if (!this.pool) {
-      summaries = [...this.users.values()].map(user => {
+      summaries = [...this.users.values()].filter(user => user.role === "citizen").map(user => {
         const reports = [...this.memoryReporters.values()].filter(id => id === user.id).length;
         const verifications = this.verdicts.get(user.id)?.size || 0;
         const helpfulVotes = this.votes.get(user.id)?.size || 0;
@@ -454,6 +578,7 @@ export class CivicStore {
          LEFT JOIN issues i ON i.reporter_id=u.id
          LEFT JOIN verifications v ON v.user_id=u.id
          LEFT JOIN votes vo ON vo.user_id=u.id
+         WHERE u.role='citizen' AND u.is_active=true
          GROUP BY u.id,u.name,u.picture,u.role
          HAVING COUNT(DISTINCT i.id)+COUNT(DISTINCT v.issue_id)+COUNT(DISTINCT vo.issue_id)>0
          ORDER BY score DESC LIMIT 12`,
@@ -469,7 +594,7 @@ export class CivicStore {
 
   async adminIds() {
     if (!this.pool) return [...this.users.values()].filter(user => user.role === "admin").map(user => user.id);
-    const result = await this.pool.query("SELECT id::text FROM users WHERE role='admin'");
+    const result = await this.pool.query("SELECT id::text FROM users WHERE role='admin' AND is_active=true");
     return result.rows.map((item: any) => item.id as string);
   }
 
@@ -542,9 +667,9 @@ export class CivicStore {
     if (!this.pool) {
       const issue = this.memoryIssues.find(candidate => candidate.id === issueId);
       if (!issue) return undefined;
-      issue.comments = [...(issue.comments || []), {
-        id: crypto.randomUUID(), author: user.name, text, createdAt: new Date().toISOString(),
-      }];
+      const id = crypto.randomUUID();
+      issue.comments = [...(issue.comments || []), { id, author: user.name, text, createdAt: new Date().toISOString() }];
+      this.memoryCommentOwners.set(id, user.id);
       return this.getIssue(issueId, user.id);
     }
     await this.pool.query("INSERT INTO comments(issue_id,user_id,author,text) VALUES($1,$2,$3,$4)", [issueId, user.id, user.name, text]);
@@ -553,14 +678,36 @@ export class CivicStore {
 
   async moderateComment(commentId: string, hidden: boolean) {
     if (!this.pool) {
+      let found = false;
       for (const issue of this.memoryIssues) {
         const comment = issue.comments?.find(item => item.id === commentId);
-        if (comment && hidden) issue.comments = issue.comments?.filter(item => item.id !== commentId);
+        if (comment) {
+          found = true;
+          if (hidden) issue.comments = issue.comments?.filter(item => item.id !== commentId);
+        }
       }
-      return true;
+      return found;
     }
     const result = await this.pool.query("UPDATE comments SET is_hidden=$2 WHERE id=$1", [commentId, hidden]);
     return Boolean(result.rowCount);
+  }
+
+  async deleteComment(commentId: string) {
+    if (!this.pool) {
+      for (const issue of this.memoryIssues) {
+        const comment = issue.comments?.find(item => item.id === commentId);
+        if (!comment) continue;
+        issue.comments = issue.comments?.filter(item => item.id !== commentId);
+        this.memoryCommentOwners.delete(commentId);
+        return { issueId: issue.id };
+      }
+      return undefined;
+    }
+    const result = await this.pool.query(
+      `DELETE FROM comments WHERE id=$1 RETURNING issue_id AS "issueId"`,
+      [commentId],
+    );
+    return result.rows[0] as { issueId: string } | undefined;
   }
 
   async addAdditionalImage(issueId: string, userId: string, imageUrl: string) {

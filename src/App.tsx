@@ -328,7 +328,7 @@ export default function App() {
           {activeTab === "notifications" && user && <NotificationsCenter />}
           {activeTab === "report" && user && <ReportIssuePage onSubmit={handleSubmitIssue} setActiveTab={navigate} setSelectedIssue={setSelectedIssue} />}
           {activeTab === "detail" && selectedIssue && <IssueDetailPage issue={selectedIssue} allIssues={issues} onBack={() => navigate("dashboard")} onUpvote={handleUpvote} onVerify={handleVerify} onNotAccurate={handleNotAccurate} onFollow={handleFollow} onResolutionFeedback={handleResolutionFeedback} onUpdateStatus={handleUpdateStatus} onAddComment={(author, text) => handleAddComment(selectedIssue.id, author, text)} onAddImage={imageUrl => handleAddImage(selectedIssue.id, imageUrl)} busy={busyActions.has(selectedIssue.id)} />}
-          {activeTab === "admin" && user?.role === "admin" && <AdminConsole issues={issues} metrics={stats} onSelect={issue => { setSelectedIssue(issue); setActiveTab("detail"); }} onStatus={async (id, status, details) => { await handleUpdateStatus(id, status, details); await fetchData(); }} />}
+          {activeTab === "admin" && user?.role === "admin" && <AdminConsole issues={issues} metrics={stats} currentUser={user} onSelect={issue => { setSelectedIssue(issue); setActiveTab("detail"); }} onStatus={async (id, status, details) => { await handleUpdateStatus(id, status, details); await fetchData(); }} />}
         </motion.div></AnimatePresence></Suspense>}
       </main>
 
